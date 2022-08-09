@@ -16,6 +16,10 @@
 module vessel.app;
 
 import vibe.d;
+import moss.db.keyvalue.orm;
+import moss.db.keyvalue.interfaces;
+import moss.db.keyvalue.errors;
+import moss.db.keyvalue;
 
 /**
  * Main lifecycle management for the Vessel Daemon
@@ -47,6 +51,15 @@ public final class VesselApplication
     void start() @safe
     {
         listener = listenHTTP(settings, router);
+
+        /* Ensure we get a DB going */
+        Database.open("lmdb://database", DatabaseFlags.CreateIfNotExists).match!((db) {
+            appDB = db;
+        }, (error) {
+            throw new HTTPStatusException(HTTPStatus.internalServerError, error.message);
+        });
+
+        /* TODO: Ensure our models are created */
     }
 
     /**
@@ -55,6 +68,7 @@ public final class VesselApplication
     void stop() @safe
     {
         listener.stopListening();
+        appDB.close();
     }
 
 private:
@@ -62,4 +76,5 @@ private:
     HTTPServerSettings settings;
     HTTPListener listener;
     URLRouter router;
+    Database appDB;
 }
