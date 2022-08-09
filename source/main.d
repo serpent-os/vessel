@@ -16,6 +16,7 @@
 module main;
 
 import vibe.d;
+import vessel.app;
 
 /**
  * Main entry point for vessel
@@ -26,5 +27,11 @@ import vibe.d;
  */
 int main(string[] args)
 {
+    auto app = new VesselApplication();
+    scope (exit)
+    {
+        app.stop();
+    }
+    app.start();
     return runApplication();
 }
