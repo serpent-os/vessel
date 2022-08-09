@@ -8,7 +8,10 @@
 	"description": "Repository management for moss clients",
 	"dependencies": {
 		"moss-db": "~>0.0.3",
-		"vibe-d": "~>0.9"
+		"vibe-d": "~>0.9",
+		"moss-format": {
+			"path": "../moss-format"
+		}
 	},
 	"versions": [
 		"VibeIdleCollect",
