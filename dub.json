@@ -1,0 +1,19 @@
+{
+	"name": "vessel",
+	"license": "Zlib",
+	"copyright": "Copyright © 2022, Serpent OS Developers",
+	"authors": [
+		"Serpent OS Developers"
+	],
+	"description": "Repository management for moss clients",
+	"dependencies": {
+		"moss-db": "~>0.0.3",
+		"vibe-d": "~>0.9"
+	},
+	"versions": [
+		"VibeIdleCollect",
+		"VibeDisableCommandLineParsing",
+		"VibeNoDefaultArgs",
+		"VibeOutputCompactHTML"
+	]
+}
