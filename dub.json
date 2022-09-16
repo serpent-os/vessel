@@ -11,6 +11,9 @@
 		"vibe-d": "~>0.9",
 		"moss-format": {
 			"path": "../moss-format"
+		},
+		"moss-deps": {
+			"path": "../moss-deps"
 		}
 	},
 	"versions": [
