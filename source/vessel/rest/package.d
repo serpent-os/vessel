@@ -135,8 +135,7 @@ public interface VesselAPIv1
 public final class VesselAPI : VesselAPIv1
 {
 
-    override void importBinaries(uint64_t reportID,
-            Collectable[] collectables) @safe
+    override void importBinaries(uint64_t reportID, Collectable[] collectables) @safe
     {
     }
 }

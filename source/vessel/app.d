@@ -22,6 +22,7 @@ import moss.db.keyvalue.errors;
 import moss.db.keyvalue;
 
 import vessel.rest;
+import vessel.collection;
 
 /**
  * Main lifecycle management for the Vessel Daemon
@@ -55,7 +56,7 @@ public final class VesselApplication
     {
         listener = listenHTTP(settings, router);
 
-        /* TODO: Ensure our models are created */
+        runWorkerTask({ auto c = new PackageCollection("."); c.serve(); });
     }
 
     /**
@@ -64,6 +65,7 @@ public final class VesselApplication
     void stop() @safe
     {
         listener.stopListening();
+        () @trusted { send(locate("collection"), StopServing()); }();
     }
 
 private:
