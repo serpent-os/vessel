@@ -27,7 +27,7 @@ import vessel.app;
  */
 int main(string[] args)
 {
-    auto app = new VesselApplication();
+    auto app = new VesselApplication(".");
     scope (exit)
     {
         app.stop();
