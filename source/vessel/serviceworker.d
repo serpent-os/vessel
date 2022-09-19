@@ -5,14 +5,14 @@
  */
 
 /**
- * vessel.collection
+ * vessel.serviceworker
  *
- * Collection management
+ * Control thread for incoming ops
  *
  * Authors: Copyright © 2020-2022 Serpent OS Developers
  * License: Zlib
  */
-module vessel.collection;
+module vessel.serviceworker;
 
 import vibe.d;
 
@@ -24,16 +24,16 @@ public import vessel.messaging;
 public static immutable(string) trunkBranch = "volatile";
 
 /**
- * A binary collection consists of a trunk branch, referred
- * to as `volatile`, where all binary packages are imported into.
+ * ServiceWorker is the writer queue for the underlying databases
+ * and ensures correct import procedures for stones
  */
-public final class PackageCollection
+public final class ServiceWorker
 {
 
     @disable this();
 
     /**
-     * Construct a new Collection with the given root directory
+     * Construct a new ServiceWorker
      */
     this(string rootDir) @safe
     {
@@ -45,8 +45,8 @@ public final class PackageCollection
      */
     void serve()
     {
-        logInfo("PackageCollection now servicing requests");
-        () @trusted { register("collection", thisTid()); }();
+        logInfo("ServiceWorker now servicing requests");
+        () @trusted { register("serviceWorker", thisTid()); }();
 
         running = true;
 
@@ -54,7 +54,7 @@ public final class PackageCollection
         {
             receive((StopServing _) { running = false; });
         }
-        logInfo("PackageCollection no longer running");
+        logInfo("ServiceWorker no longer running");
     }
 
 private:
