@@ -16,15 +16,12 @@ module vessel.collection;
 
 import vibe.d;
 
+public import vessel.messaging;
+
 /**
  * We refer to trunk as "volatile"
  */
 public static immutable(string) trunkBranch = "volatile";
-
-public struct StopServing
-{
-
-}
 
 /**
  * A binary collection consists of a trunk branch, referred
