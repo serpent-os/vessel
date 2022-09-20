@@ -24,6 +24,10 @@ public struct StopServing
 {
 }
 
+/**
+ * Send acknowledgement to the main thread that the worker is
+ * now ready to go, prior to serving API requests.
+ */
 public struct WorkerStarted
 {
     Tid workerTid;
