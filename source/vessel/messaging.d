@@ -32,3 +32,19 @@ public struct WorkerStarted
 {
     Tid workerTid;
 }
+
+/**
+ * Frontend got told to import a batch of stones, lets go import them
+ */
+public struct ImportStones
+{
+    /**
+     * Each URI corresponds to a hash of the same index
+     */
+    immutable(string[]) uris;
+
+    /**
+     * The set of hashes
+     */
+    immutable(string[]) hashes;
+}

@@ -54,7 +54,6 @@ public final class VesselApplication
 
         /* Primary routing mechanism for our API */
         router = new URLRouter();
-        router.registerRestInterface(new VesselAPI());
     }
 
     /**
@@ -72,7 +71,6 @@ public final class VesselApplication
             logInfo(format!"Constructing tree: %s"(req));
             req.mkdirRecurse();
         }
-        listener = listenHTTP(settings, router);
 
         () @trusted { register("mainApp", thisTid()); }();
 
@@ -80,9 +78,15 @@ public final class VesselApplication
             auto c = new ServiceWorker(".", locate("mainApp"));
             c.serve();
         });
+
         auto p = () @trusted { return receiveOnly!WorkerStarted; }();
         workerTid = p.workerTid;
         logInfo(format!"Acknowledge Worker startup: %s"(p));
+
+        router.registerRestInterface(new VesselAPI(workerTid));
+        router.rebuild();
+
+        listener = listenHTTP(settings, router);
     }
 
     /**

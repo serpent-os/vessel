@@ -5,69 +5,6 @@
  */
 
 /**
-
-moss collection add official https://collections.serpentos.com/%(arch)/branches/current/%(format)/stone.index
-
-
-x86_64/
-    branches/
-        volatile
-            stone.index
-        current
-            1/
-                stone.index -> ../../releases/2022..../stone.index
-        testing
-            1/
-                stone.index -> ../../releases/2022..../stone.index
-
-    pool/
-        n/nano/
-            *.stone
-    releases/
-        2022..../stone.index
-
-collection/ scanning:
-
-    pkgIDs = []
-    foreach pkg in find . -name manifest*.bin;
-        if pkg.mossVersion > highestMossVersion
-            highestMossVersion = pkg.mossVersion
-        pkgIDs ~= pkg.id
-
-    release = Release()
-    release.formatVersion = highestMossVersion
-    release.pkgIDs = pkgIDs
-
-    [git branch testing]
-        push tag
-
-    [git branch main (current)]
-
-// Simple index format
-moss collection add official https://collection.serpentos.com/current/1/stone.index
-moss collection add testing https://collection.serpentos.com/testing/2/stone.index
-moss collection add volatile https://collection.serpentos.com/volatile/stone.index
-
-moss collection add <noun> url/
-
-UNLESS collection ends with "stone.index", automatically add:
-
-    mossFormatVersion/stone.index
-
-
-
-
-
-
-
-
-
-
-
-
-
-*/
-/**
  * vessel.rest
  *
  * REST API for Vessel
@@ -80,6 +17,8 @@ module vessel.rest;
 
 import vibe.d;
 import std.stdint : uint64_t;
+import vessel.messaging;
+import std.exception : assumeUnique;
 
 /**
  * We only care for packages right now.
@@ -97,9 +36,9 @@ public enum CollectableType : string
 public struct Collectable
 {
     /**
-     * Typically the pkgID
+     * Type of collectable
      */
-    string id;
+    CollectableType type;
 
     /**
      * Where can we download this from?
@@ -125,7 +64,7 @@ public interface VesselAPIv1
      *      reportID     = ID to use when reporting back on status
      *      collectables = The stones to collect
      */
-    @method(HTTPMethod.POST) @path("collections/import/") void importBinaries(
+    @method(HTTPMethod.POST) @path("collections/import") void importBinaries(
             uint64_t reportID, Collectable[] collectables) @safe;
 }
 
@@ -134,8 +73,35 @@ public interface VesselAPIv1
  */
 public final class VesselAPI : VesselAPIv1
 {
+    @disable this();
+
+    /**
+     * Construct VesselAPI implementation with knowledge of the worker
+     */
+    this(Tid workerTid) @safe
+    {
+        this.workerTid = workerTid;
+    }
 
     override void importBinaries(uint64_t reportID, Collectable[] collectables) @safe
     {
+        string[] uris;
+        string[] hashes;
+        foreach (col; collectables)
+        {
+            if (col.type != CollectableType.Package)
+            {
+                continue;
+            }
+            hashes ~= col.sha256sum;
+            uris ~= col.uri;
+        }
+        () @trusted {
+            send(workerTid, ImportStones(assumeUnique(uris), assumeUnique(hashes)));
+        }();
     }
+
+private:
+
+    Tid workerTid;
 }

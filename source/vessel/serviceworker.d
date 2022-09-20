@@ -39,6 +39,9 @@ public final class ServiceWorker
     {
         this.rootDir = rootDir;
         this.mainApp = mainApp;
+
+        /* Configure the mailbox for a backlog */
+        () @trusted { setMaxMailboxSize(thisTid, 0, OnCrowding.block); }();
     }
 
     /**
@@ -55,12 +58,25 @@ public final class ServiceWorker
 
         while (running)
         {
-            receive((StopServing _) { running = false; });
+            receive((StopServing _) { running = false; }, (ImportStones req) {
+                this.importStones(req);
+            });
         }
         logInfo("ServiceWorker no longer running");
     }
 
 private:
+
+    /**
+     * Perform an import into the volatile branch
+     *
+     * Params:
+     *      req = The request
+     */
+    void importStones(ImportStones req) @safe
+    {
+        logInfo(format!"Import request for: %s"(req));
+    }
 
     string rootDir = ".";
     bool running;
