@@ -20,8 +20,10 @@ import moss.db.keyvalue.errors;
 import moss.db.keyvalue.interfaces;
 import moss.db.keyvalue.orm;
 import vibe.d;
+import vessel.messaging;
 import vessel.rest;
 import vessel.serviceworker;
+import std.algorithm : map, filter;
 import std.path : asNormalizedPath, buildPath, absolutePath;
 import std.file : exists, mkdirRecurse;
 import std.conv : to;
@@ -63,19 +65,24 @@ public final class VesselApplication
         immutable requiredDirs = [
             "public/pool", "public/releases", "public/branches", "database",
         ];
-        foreach (req; requiredDirs)
+        auto builderDirs = requiredDirs.map!((i) => rootDir.buildPath(i))
+            .filter!((i) => !i.exists);
+        foreach (req; builderDirs)
         {
-            if (req.exists)
-            {
-                continue;
-            }
-            immutable fullPath = rootDir.buildPath(req);
-            logInfo(format!"Constructing tree: %s"(fullPath));
-            fullPath.mkdirRecurse();
+            logInfo(format!"Constructing tree: %s"(req));
+            req.mkdirRecurse();
         }
         listener = listenHTTP(settings, router);
 
-        runWorkerTask({ auto c = new ServiceWorker("."); c.serve(); });
+        () @trusted { register("mainApp", thisTid()); }();
+
+        runWorkerTask({
+            auto c = new ServiceWorker(".", locate("mainApp"));
+            c.serve();
+        });
+        auto p = () @trusted { return receiveOnly!WorkerStarted; }();
+        workerTid = p.workerTid;
+        logInfo(format!"Acknowledge Worker startup: %s"(p));
     }
 
     /**
@@ -84,7 +91,7 @@ public final class VesselApplication
     void stop() @safe
     {
         listener.stopListening();
-        () @trusted { send(locate("serviceWorker"), StopServing()); }();
+        () @trusted { send(workerTid, StopServing()); }();
     }
 
 private:
@@ -93,4 +100,5 @@ private:
     HTTPListener listener;
     URLRouter router;
     string rootDir = ".";
+    Tid workerTid;
 }

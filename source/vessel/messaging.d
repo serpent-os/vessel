@@ -15,9 +15,16 @@
 
 module vessel.messaging;
 
+import vibe.d;
+
 /**
  * Simple request to shut down the main loop
  */
 public struct StopServing
 {
+}
+
+public struct WorkerStarted
+{
+    Tid workerTid;
 }

@@ -35,9 +35,10 @@ public final class ServiceWorker
     /**
      * Construct a new ServiceWorker
      */
-    this(string rootDir) @safe
+    this(string rootDir, Tid mainApp) @safe
     {
         this.rootDir = rootDir;
+        this.mainApp = mainApp;
     }
 
     /**
@@ -50,6 +51,8 @@ public final class ServiceWorker
 
         running = true;
 
+        send(mainApp, WorkerStarted(thisTid));
+
         while (running)
         {
             receive((StopServing _) { running = false; });
@@ -61,4 +64,5 @@ private:
 
     string rootDir = ".";
     bool running;
+    Tid mainApp;
 }
