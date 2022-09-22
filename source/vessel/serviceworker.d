@@ -7,7 +7,7 @@
 /**
  * vessel.serviceworker
  *
- * Control thread for incoming ops
+ * Handles the whole "run forever and fetch things" routine.
  *
  * Authors: Copyright © 2020-2022 Serpent OS Developers
  * License: Zlib

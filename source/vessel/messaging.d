@@ -25,6 +25,14 @@ public struct StopServing
 }
 
 /**
+ * Notify the main app the controller has started
+ */
+public struct ControllerStarted
+{
+    Tid controllerTid;
+}
+
+/**
  * Send acknowledgement to the main thread that the worker is
  * now ready to go, prior to serving API requests.
  */
