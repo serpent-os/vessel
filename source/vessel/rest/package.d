@@ -97,7 +97,7 @@ public final class VesselAPI : VesselAPIv1
             uris ~= col.uri;
         }
         VesselEvent event = () @trusted {
-            return ImportStonesEvent(assumeUnique(uris), assumeUnique(hashes));
+            return ImportStonesEvent(reportID, assumeUnique(uris), assumeUnique(hashes));
         }();
         queue.put(event);
     }

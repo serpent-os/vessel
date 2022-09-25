@@ -135,11 +135,11 @@ private:
         auto failedJobs = jobs.values.filter!((j) => j.status == JobStatus.Failed);
         if (!failedJobs.empty)
         {
-            logError(format!"Cannot accept job due to failure");
+            logError(format!"Cannot accept job %d due to failure"(event.reportID));
             return;
         }
 
-        logInfo("Successfully importing job");
+        logInfo(format!"Successfully importing job %d"(event.reportID));
     }
 
     void onProgress(uint workerIndex, Fetchable f, double dlCurrent, double dlTotal) @trusted

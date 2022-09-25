@@ -18,12 +18,18 @@ module vessel.messaging;
 import vibe.d;
 public import vibe.core.channel;
 public import taggedalgebraic.taggedalgebraic;
+public import std.stdint : uint64_t;
 
 /**
  * A set of origins and index-matched hashes
  */
 public struct ImportStonesEvent
 {
+    /**
+     * Remote ID for reporting
+     */
+    uint64_t reportID;
+
     /**
      * Remote URIs for the stones
      */
