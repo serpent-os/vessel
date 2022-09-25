@@ -139,10 +139,16 @@ private:
             return;
         }
 
+        /* Let's get them all included, shall we? */
+        foreach (job; jobs.values)
+        {
+            importFetched(job);
+        }
+
         logInfo(format!"Successfully importing job %d"(event.reportID));
     }
 
-    void onProgress(uint workerIndex, Fetchable f, double dlCurrent, double dlTotal) @trusted
+    void onProgress(uint workerIndex, Fetchable f, double, double) @trusted
     {
         jobs[f.sourceURI].status = JobStatus.InProgress;
     }
@@ -166,6 +172,11 @@ private:
     {
         jobs[f.sourceURI].status = JobStatus.Failed;
         logError(errMsg);
+    }
+
+    void importFetched(scope Job fetched) @safe
+    {
+
     }
 
     string rootDir = ".";
