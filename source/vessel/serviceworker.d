@@ -35,32 +35,28 @@ public final class ServiceWorker
     /**
      * Construct a new ServiceWorker
      */
-    this(string rootDir, Tid mainApp) @safe
+    this(VesselEventQueue queue, string rootDir) @safe
     {
+        this.queue = queue;
         this.rootDir = rootDir;
-        this.mainApp = mainApp;
-
-        /* Configure the mailbox for a backlog */
-        () @trusted { setMaxMailboxSize(thisTid, 0, OnCrowding.block); }();
     }
 
     /**
      * Serve the collection requests
      */
-    void serve()
+    void serve() @safe
     {
         logInfo("ServiceWorker now servicing requests");
-        () @trusted { register("serviceWorker", thisTid()); }();
 
-        running = true;
-
-        send(mainApp, WorkerStarted(thisTid));
-
-        while (running)
+        VesselEvent event;
+        while (queue.tryConsumeOne(event))
         {
-            receive((StopServing _) { running = false; }, (ImportStones req) {
-                this.importStones(req);
-            });
+            final switch (event.kind)
+            {
+            case VesselEvent.Kind.importStones:
+                importStones(event.get!(VesselEvent.Kind.importStones));
+                break;
+            }
         }
         logInfo("ServiceWorker no longer running");
     }
@@ -71,14 +67,14 @@ private:
      * Perform an import into the volatile branch
      *
      * Params:
-     *      req = The request
+     *      event = The event
      */
-    void importStones(ImportStones req) @safe
+    void importStones(ImportStonesEvent event) @safe
     {
-        logInfo(format!"Import request for: %s"(req));
+        logInfo(format!"Import request for: %s"(event));
     }
 
     string rootDir = ".";
     bool running;
-    Tid mainApp;
+    VesselEventQueue queue;
 }

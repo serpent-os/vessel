@@ -78,9 +78,9 @@ public final class VesselAPI : VesselAPIv1
     /**
      * Construct VesselAPI implementation with knowledge of the worker
      */
-    this(Tid workerTid) @safe
+    this(VesselEventQueue queue) @safe
     {
-        this.workerTid = workerTid;
+        this.queue = queue;
     }
 
     override void importBinaries(uint64_t reportID, Collectable[] collectables) @safe
@@ -96,12 +96,13 @@ public final class VesselAPI : VesselAPIv1
             hashes ~= col.sha256sum;
             uris ~= col.uri;
         }
-        () @trusted {
-            send(workerTid, ImportStones(assumeUnique(uris), assumeUnique(hashes)));
+        VesselEvent event = () @trusted {
+            return ImportStonesEvent(assumeUnique(uris), assumeUnique(hashes));
         }();
+        queue.put(event);
     }
 
 private:
 
-    Tid workerTid;
+    VesselEventQueue queue;
 }

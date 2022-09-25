@@ -54,6 +54,8 @@ public final class VesselApplication
 
         /* Primary routing mechanism for our API */
         router = new URLRouter();
+
+        queue = createChannel!(VesselEvent, 500);
     }
 
     /**
@@ -72,22 +74,15 @@ public final class VesselApplication
             req.mkdirRecurse();
         }
 
-        () @trusted { register("mainApp", thisTid()); }();
-
-        auto ourTid = thisTid();
         string rootDir = ".";
 
         /* Now startup the service *worker* */
-        runWorkerTask((Tid tid, string rootDir) {
-            auto c = new ServiceWorker(rootDir, tid);
+        runWorkerTask((VesselEventQueue queue, string rootDir) {
+            auto c = new ServiceWorker(queue, rootDir);
             c.serve();
-        }, ourTid, rootDir);
+        }, queue, rootDir);
 
-        auto p = () @trusted { return receiveOnly!WorkerStarted; }();
-        workerTid = p.workerTid;
-        logInfo(format!"Acknowledge Worker startup: %s"(p));
-
-        router.registerRestInterface(new VesselAPI(workerTid));
+        router.registerRestInterface(new VesselAPI(queue));
         router.rebuild();
 
         listener = listenHTTP(settings, router);
@@ -99,7 +94,7 @@ public final class VesselApplication
     void stop() @safe
     {
         listener.stopListening();
-        () @trusted { send(workerTid, StopServing()); }();
+        queue.close();
     }
 
 private:
@@ -108,5 +103,5 @@ private:
     HTTPListener listener;
     URLRouter router;
     string rootDir = ".";
-    Tid workerTid;
+    VesselEventQueue queue;
 }

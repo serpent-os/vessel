@@ -16,43 +16,27 @@
 module vessel.messaging;
 
 import vibe.d;
+public import vibe.core.channel;
+public import taggedalgebraic.taggedalgebraic;
 
 /**
- * Simple request to shut down the main loop
+ * A set of origins and index-matched hashes
  */
-public struct StopServing
+public struct ImportStonesEvent
 {
-}
-
-/**
- * Notify the main app the controller has started
- */
-public struct ControllerStarted
-{
-    Tid controllerTid;
-}
-
-/**
- * Send acknowledgement to the main thread that the worker is
- * now ready to go, prior to serving API requests.
- */
-public struct WorkerStarted
-{
-    Tid workerTid;
-}
-
-/**
- * Frontend got told to import a batch of stones, lets go import them
- */
-public struct ImportStones
-{
-    /**
-     * Each URI corresponds to a hash of the same index
-     */
     immutable(string[]) uris;
-
-    /**
-     * The set of hashes
-     */
     immutable(string[]) hashes;
 }
+
+public union VesselEventSet
+{
+    ImportStonesEvent importStones;
+}
+
+public alias VesselEvent = TaggedAlgebraic!VesselEventSet;
+
+/**
+ * The worker event queue is a pumping of VesselEvent
+ * algebraic type
+ */
+public alias VesselEventQueue = Channel!(VesselEvent, 500);
