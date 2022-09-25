@@ -65,6 +65,7 @@ public final class VesselApplication
     {
         immutable requiredDirs = [
             "public/pool", "public/releases", "public/branches", "database",
+            "staging",
         ];
         auto builderDirs = requiredDirs.map!((i) => rootDir.buildPath(i))
             .filter!((i) => !i.exists);
@@ -73,8 +74,6 @@ public final class VesselApplication
             logInfo(format!"Constructing tree: %s"(req));
             req.mkdirRecurse();
         }
-
-        string rootDir = ".";
 
         /* Now startup the service *worker* */
         runWorkerTask((VesselEventQueue queue, string rootDir) {
