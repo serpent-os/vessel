@@ -22,7 +22,6 @@ import moss.db.keyvalue.orm;
 import vibe.d;
 import vessel.messaging;
 import vessel.rest;
-import vessel.servicecontroller;
 import vessel.serviceworker;
 import std.algorithm : map, filter;
 import std.path : asNormalizedPath, buildPath, absolutePath;
@@ -78,16 +77,6 @@ public final class VesselApplication
         auto ourTid = thisTid();
         string rootDir = ".";
 
-        /* Startup the service controller */
-        runWorkerTask((Tid tid, string rootDir) {
-            auto c = new ServiceController(rootDir, tid);
-            c.serve();
-        }, ourTid, rootDir);
-
-        auto c = () @trusted { return receiveOnly!ControllerStarted; }();
-        controllerTid = c.controllerTid;
-        logInfo(format!"Acknowledged Controller startup: %s"(c));
-
         /* Now startup the service *worker* */
         runWorkerTask((Tid tid, string rootDir) {
             auto c = new ServiceWorker(rootDir, tid);
@@ -110,7 +99,6 @@ public final class VesselApplication
     void stop() @safe
     {
         listener.stopListening();
-        () @trusted { send(controllerTid, StopServing()); }();
         () @trusted { send(workerTid, StopServing()); }();
     }
 
@@ -121,5 +109,4 @@ private:
     URLRouter router;
     string rootDir = ".";
     Tid workerTid;
-    Tid controllerTid;
 }
