@@ -101,8 +101,7 @@ private:
             immutable compHash = computeSHA256(job.destinationPath, true);
             if (expHash != compHash)
             {
-                logError(format!"%s: Expected hash %s, got %s"(f.sourceURI, expHash, compHash));
-                job.status = JobStatus.Failed;
+                onFail(f, format!"%s: Expected hash %s, got %s"(f.sourceURI, expHash, compHash));
                 return;
             }
         }
@@ -133,7 +132,7 @@ private:
             fetcher.fetch();
         }
 
-        immutable failedJobs = jobs.values.filter!((j) => j.status == JobStatus.Failed);
+        auto failedJobs = jobs.values.filter!((j) => j.status == JobStatus.Failed);
         if (!failedJobs.empty)
         {
             logError(format!"Cannot accept job due to failure");
@@ -166,6 +165,7 @@ private:
     void onFail(Fetchable f, string errMsg) @trusted
     {
         jobs[f.sourceURI].status = JobStatus.Failed;
+        logError(errMsg);
     }
 
     string rootDir = ".";
