@@ -24,15 +24,31 @@ public import taggedalgebraic.taggedalgebraic;
  */
 public struct ImportStonesEvent
 {
+    /**
+     * Remote URIs for the stones
+     */
     immutable(string[]) uris;
+
+    /**
+     * SHA256 hashsums
+     */
     immutable(string[]) hashes;
 }
 
+/**
+ * Our algebraic event is composed of "events"
+ */
 public union VesselEventSet
 {
+    /**
+     * Requested to import a bunch of stones
+     */
     ImportStonesEvent importStones;
 }
 
+/**
+ * An almost-sumtype of events
+ */
 public alias VesselEvent = TaggedAlgebraic!VesselEventSet;
 
 /**
