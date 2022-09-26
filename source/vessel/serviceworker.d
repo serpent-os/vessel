@@ -26,6 +26,7 @@ import std.path : baseName, buildPath;
 import std.stdio : File;
 import vessel.collectiondb;
 import vibe.d;
+import vessel.models;
 
 public import vessel.messaging;
 
@@ -162,12 +163,16 @@ private:
         }
 
         /* Let's get them all included, shall we? */
-        foreach (job; jobs.values)
+        auto jobSet = jobs.values;
+        foreach (job; jobSet)
         {
-            importFetched(job);
+            importFetched(job).match!((Success _) {
+                logInfo(format!"Job %d: Successfully imported %s"(event.reportID, job.id));
+            }, (Failure f) {
+                logError(format!"Job %d: Failed to import %s: %s"(event.reportID,
+                    job.id, f.message));
+            });
         }
-
-        logInfo(format!"Successfully importing job %d"(event.reportID));
     }
 
     void onProgress(uint workerIndex, Fetchable f, double, double) @trusted
@@ -205,17 +210,65 @@ private:
      */
     auto importFetched(scope Job fetched) @safe
     {
-        scope auto rdr = new Reader(File(fetched.destinationPath, "rb"));
-        if (rdr.archiveHeader.type != MossFileType.Binary)
-        {
-            return cast(MetaResult) fail("Invalid archive");
-        }
+        auto fi = File(fetched.destinationPath, "rb");
+        scope auto rdr = new Reader(fi);
         scope (exit)
         {
             rdr.close();
         }
-        MetaPayload mp = () @trusted { return rdr.payload!MetaPayload; }();
-        return db.install(mp);
+        if (rdr.archiveHeader.type != MossFileType.Binary)
+        {
+            return cast(CollectionResult) fail("Invalid archive");
+        }
+        VolatileRecord record;
+        record.pkgID = fetched.checksum;
+
+        /* Flesh out with index metadata */
+        MetaPayload mp = () @trusted {
+            MetaPayload m = rdr.payload!MetaPayload;
+            m.addRecord(RecordType.String, RecordTag.PackageHash, fetched.checksum);
+            m.addRecord(RecordType.Uint64, RecordTag.PackageSize, fi.size());
+            foreach (entry; m)
+            {
+                switch (entry.tag)
+                {
+                case RecordTag.Name:
+                    record.name = entry.get!string;
+                    break;
+                case RecordTag.BuildRelease:
+                    record.buildRelease = entry.get!uint64_t;
+                    break;
+                case RecordTag.Release:
+                    record.sourceRelease = entry.get!uint64_t;
+                    break;
+                default:
+                    break;
+                }
+            }
+            return m;
+        }();
+        /* Check for an existing record */
+        VolatileRecord existing = collectionDB.lookupVolatile(record.name)
+            .match!((VolatileRecord r) => r, (_) => VolatileRecord.init);
+        if (existing.sourceRelease > record.sourceRelease)
+        {
+            return cast(CollectionResult) fail(
+                    format!"newer candidate (rel: %d) exists already"(existing.sourceRelease));
+        }
+        if (existing.sourceRelease == record.sourceRelease
+                && record.buildRelease < existing.buildRelease)
+        {
+            return cast(CollectionResult) fail(
+                    format!"bump release number to %s"(existing.sourceRelease + 1));
+        }
+        else if (existing.sourceRelease == record.sourceRelease)
+        {
+            return cast(CollectionResult) fail("cannot include build with identical release field");
+        }
+        /* Chain install */
+        return db.install(mp).match!((Success _) {
+            return cast(CollectionResult) collectionDB.storeVolatile(record);
+        }, (Failure f) { return cast(CollectionResult) f; });
     }
 
     string rootDir = ".";
