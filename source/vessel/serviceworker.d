@@ -14,12 +14,17 @@
  */
 module vessel.serviceworker;
 
-import vibe.d;
-import moss.fetcher;
-import moss.deps.registry.job;
-import std.path : buildPath, baseName;
+import moss.client.metadb;
+import moss.core.errors;
 import moss.core.util : computeSHA256;
+import moss.deps.registry.job;
+import moss.fetcher;
+import moss.format.binary.payload.meta;
+import moss.format.binary.reader;
 import std.algorithm : filter;
+import std.path : baseName, buildPath;
+import std.stdio : File;
+import vibe.d;
 
 public import vessel.messaging;
 
@@ -60,6 +65,11 @@ public final class ServiceWorker
     {
         logInfo("ServiceWorker now servicing requests");
 
+        db = new MetaDB(rootDir.buildPath("database", "meta"), true);
+        db.connect.match!((Success _) {}, (Failure f) {
+            throw new Exception(f.message);
+        });
+
         VesselEvent event;
         while (queue.tryConsumeOne(event))
         {
@@ -71,6 +81,8 @@ public final class ServiceWorker
             }
         }
         logInfo("ServiceWorker no longer running");
+        db = null;
+        db.close();
     }
 
 private:
@@ -174,9 +186,26 @@ private:
         logError(errMsg);
     }
 
-    void importFetched(scope Job fetched) @safe
+    /**
+     * Import a package into the primary MetaDB
+     *
+     * Params:
+     *      fetched = The fetched stone
+     * Returns: A MetaResult
+     */
+    auto importFetched(scope Job fetched) @safe
     {
-
+        scope auto rdr = new Reader(File(fetched.destinationPath, "rb"));
+        if (rdr.archiveHeader.type != MossFileType.Binary)
+        {
+            return cast(MetaResult) fail("Invalid archive");
+        }
+        scope (exit)
+        {
+            rdr.close();
+        }
+        MetaPayload mp = () @trusted { return rdr.payload!MetaPayload; }();
+        return db.install(mp);
     }
 
     string rootDir = ".";
@@ -185,4 +214,5 @@ private:
     VesselEventQueue queue;
     FetchController fetcher;
     Job[string] jobs;
+    MetaDB db;
 }
