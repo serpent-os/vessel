@@ -16,3 +16,4 @@
 public import vessel.models.branch;
 public import vessel.models.package_collection;
 public import vessel.models.release;
+public import vessel.models.record;
