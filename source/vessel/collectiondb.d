@@ -30,6 +30,11 @@ import std.path : buildPath;
 public alias CollectionResult = Optional!(Success, Failure);
 
 /**
+ * Either a record or nada.
+ */
+public alias VolatileResult = Optional!(VolatileRecord, Failure);
+
+/**
  * The CollectionDB manages the storage of pointer records within
  * branch releases. Additionally it handles the special case Volatile
  * branch, from which all branches are cut.
@@ -67,6 +72,45 @@ public final class CollectionDB
             return err.isNull
                 ? cast(CollectionResult) Success() : cast(CollectionResult) fail(err.message);
         }, (DatabaseError err) { return cast(CollectionResult) fail(err.toString); });
+    }
+
+    /**
+     * Lookup a record by *name*
+     *
+     * Params:
+     *      name = Package name (provider)
+     * Returns: Either a record, or a failure
+     */
+    VolatileResult lookupVolatile(string name) @safe
+    in
+    {
+        assert(name !is null);
+    }
+    do
+    {
+        VolatileRecord record;
+        immutable err = db.view((in tx) => record.load(tx, name));
+        return err.isNull ? cast(VolatileResult) record : cast(VolatileResult) fail(err.message);
+    }
+
+    /**
+     * Store the updated volatile record
+     *
+     * Params:
+     *      record = New record to store.
+     * Returns: Success or failure
+     */
+    CollectionResult storeVolatile(scope const ref VolatileRecord record) @safe
+    in
+    {
+        assert(record.name !is null);
+        assert(record.pkgID !is null);
+    }
+    do
+    {
+        immutable err = db.update((scope tx) => record.save(tx));
+        return err.isNull ? cast(CollectionResult) Success() : cast(
+                CollectionResult) fail(err.message);
     }
 
     /**
