@@ -280,6 +280,7 @@ private:
         {
             return cast(CollectionResult) fail("missing source name");
         }
+        record.sourceID = sourceID;
 
         /* Construct the final resting place (o-O) */
         immutable poolDir = sourceNameToDir(sourceID);

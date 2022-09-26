@@ -31,6 +31,11 @@ public @Model struct VolatileRecord
     @PrimaryKey string name;
 
     /**
+     * We sort record by source groups
+     */
+    string sourceID;
+
+    /**
      * Package identifier in MetaDB
      */
     string pkgID;
