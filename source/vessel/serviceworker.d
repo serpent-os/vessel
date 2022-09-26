@@ -72,6 +72,11 @@ public final class ServiceWorker
             throw new Exception(f.message);
         });
 
+        collectionDB = new CollectionDB(rootDir);
+        collectionDB.connect.match!((Success _) {}, (Failure f) {
+            throw new Exception(f.message);
+        });
+
         VesselEvent event;
         while (queue.tryConsumeOne(event))
         {

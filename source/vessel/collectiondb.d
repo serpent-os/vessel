@@ -20,6 +20,9 @@ import moss.db.keyvalue;
 import moss.db.keyvalue.errors;
 import moss.db.keyvalue.interfaces;
 import moss.db.keyvalue.orm;
+import vibe.d;
+import vessel.models;
+import std.path : buildPath;
 
 /**
  * Known state for failure handling
@@ -53,7 +56,17 @@ public final class CollectionDB
      */
     CollectionResult connect() @safe
     {
-        return cast(CollectionResult) fail("Not yet implemented");
+        immutable dbPath = rootDir.buildPath("database", "collection");
+        immutable driverString = format!"lmdb://%s"(dbPath);
+        logTrace(format!"CollectionDB: %s"(dbPath));
+        immutable flags = DatabaseFlags.CreateIfNotExists;
+
+        return Database.open(driverString, flags).match!((Database db) {
+            this.db = db;
+            immutable err = db.update((scope tx) => tx.createModel!(VolatileRecord));
+            return err.isNull
+                ? cast(CollectionResult) Success() : cast(CollectionResult) fail(err.message);
+        }, (DatabaseError err) { return cast(CollectionResult) fail(err.toString); });
     }
 
     /**
@@ -61,10 +74,16 @@ public final class CollectionDB
      */
     void close() @safe
     {
-
+        if (db is null)
+        {
+            return;
+        }
+        db.close();
+        db = null;
     }
 
 private:
 
     string rootDir = ".";
+    Database db;
 }
