@@ -286,6 +286,11 @@ private:
         immutable targetPath = poolDir.buildPath(fetched.remoteURI().baseName);
         immutable fullPath = rootDir.buildPath(targetPath);
 
+        /* Record the pool/ relative path */
+        () @trusted {
+            mp.addRecord(RecordType.String, RecordTag.PackageURI, targetPath);
+        }();
+
         fullPath.dirName.mkdirRecurse();
 
         /* Check for an existing record */
