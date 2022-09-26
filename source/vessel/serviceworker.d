@@ -22,7 +22,8 @@ import moss.fetcher;
 import moss.format.binary.payload.meta;
 import moss.format.binary.reader;
 import std.algorithm : filter;
-import std.path : baseName, buildPath;
+import std.file : mkdirRecurse, rename;
+import std.path : baseName, buildPath, dirName;
 import std.stdio : File;
 import vessel.collectiondb;
 import vibe.d;
@@ -138,6 +139,7 @@ private:
 
             /* Key the jobs by URI. */
             auto job = new Job(JobType.FetchPackage, uri);
+            job.remoteURI = uri;
             job.checksum = event.hashes[i];
             job.destinationPath = destPath;
             job.status = JobStatus.Pending;
@@ -158,6 +160,18 @@ private:
         auto failedJobs = jobs.values.filter!((j) => j.status == JobStatus.Failed);
         if (!failedJobs.empty)
         {
+            foreach (failed; failedJobs)
+            {
+                try
+                {
+                    import std.file : remove;
+
+                    failed.destinationPath.remove();
+                }
+                catch (Exception ex)
+                {
+                }
+            }
             logError(format!"Cannot accept job %d due to failure"(event.reportID));
             return;
         }
@@ -171,6 +185,15 @@ private:
             }, (Failure f) {
                 logError(format!"Job %d: Failed to import %s: %s"(event.reportID,
                     job.id, f.message));
+                try
+                {
+                    import std.file : remove;
+
+                    job.destinationPath.remove();
+                }
+                catch (Exception ex)
+                {
+                }
             });
         }
     }
@@ -222,6 +245,7 @@ private:
         }
         VolatileRecord record;
         record.pkgID = fetched.checksum;
+        string sourceID;
 
         /* Flesh out with index metadata */
         MetaPayload mp = () @trusted {
@@ -241,12 +265,29 @@ private:
                 case RecordTag.Release:
                     record.sourceRelease = entry.get!uint64_t;
                     break;
+                case RecordTag.SourceID:
+                    sourceID = entry.get!string;
+                    break;
                 default:
                     break;
                 }
             }
             return m;
         }();
+
+        /* Source name *required* */
+        if (sourceID.empty)
+        {
+            return cast(CollectionResult) fail("missing source name");
+        }
+
+        /* Construct the final resting place (o-O) */
+        immutable poolDir = sourceNameToDir(sourceID);
+        immutable targetPath = poolDir.buildPath(fetched.remoteURI().baseName);
+        immutable fullPath = rootDir.buildPath(targetPath);
+
+        fullPath.dirName.mkdirRecurse();
+
         /* Check for an existing record */
         VolatileRecord existing = collectionDB.lookupVolatile(record.name)
             .match!((VolatileRecord r) => r, (_) => VolatileRecord.init);
@@ -265,6 +306,9 @@ private:
         {
             return cast(CollectionResult) fail("cannot include build with identical release field");
         }
+
+        fetched.destinationPath.rename(fullPath);
+
         /* Chain install */
         return db.install(mp).match!((Success _) {
             return cast(CollectionResult) collectionDB.storeVolatile(record);
@@ -279,4 +323,22 @@ private:
     Job[string] jobs;
     MetaDB db;
     CollectionDB collectionDB;
+
+    /**
+     * Pool directory
+     *
+     * Params:
+     *      sourceID = Source identity
+     * Returns: Full pool directory
+     */
+    auto sourceNameToDir(string sourceID) @safe
+    {
+        auto nom = sourceID.toLower();
+        string portion = nom[0 .. 1];
+        if (sourceID.length > 4 && nom.startsWith("lib"))
+        {
+            portion = nom[0 .. 4];
+        }
+        return "public".buildPath("pool", portion, nom);
+    }
 }
