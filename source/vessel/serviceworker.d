@@ -24,6 +24,7 @@ import moss.format.binary.reader;
 import std.algorithm : filter;
 import std.path : baseName, buildPath;
 import std.stdio : File;
+import vessel.collectiondb;
 import vibe.d;
 
 public import vessel.messaging;
@@ -49,6 +50,7 @@ public final class ServiceWorker
     {
         this.queue = queue;
         this.rootDir = rootDir;
+        this.collectionDB = new CollectionDB(rootDir);
         /* Use all the threads. Crack on my man */
         fetcher = new FetchController();
         fetcher.onProgress.connect(&onProgress);
@@ -81,8 +83,11 @@ public final class ServiceWorker
             }
         }
         logInfo("ServiceWorker no longer running");
-        db = null;
         db.close();
+        db = null;
+
+        collectionDB.close();
+        collectionDB = null;
     }
 
 private:
@@ -215,4 +220,5 @@ private:
     FetchController fetcher;
     Job[string] jobs;
     MetaDB db;
+    CollectionDB collectionDB;
 }
