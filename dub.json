@@ -7,7 +7,6 @@
 	],
 	"description": "Repository management for moss clients",
 	"dependencies": {
-		"moss-db": "~>0.0.3",
 		"vibe-d": "~>0.9",
 		"moss-format": {
 			"path": "../moss-format"
@@ -17,6 +16,9 @@
 		},
 		"moss-deps": {
 			"path": "../moss-deps"
+		},
+		"moss-db": {
+			"path": "../moss-db"
 		}
 	},
 	"versions": [
