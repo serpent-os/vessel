@@ -15,16 +15,16 @@
 
 module vessel.indexer;
 
-import vibe.d;
-import vessel.collectiondb;
 import moss.client.metadb;
 import moss.format.binary.archive_header;
 import moss.format.binary.payload;
 import moss.format.binary.payload.meta;
 import moss.format.binary.writer;
 import std.algorithm : multiSort;
-import std.path : dirName, relativePath, buildPath;
 import std.file : exists, mkdirRecurse;
+import std.path : buildPath, dirName, relativePath;
+import vessel.collectiondb;
+import vibe.d;
 
 /**
  * The Indexer is responsible for collating entries from the
@@ -73,15 +73,15 @@ public final class Indexer
             MetaEntry ent = metaDB.byID(record.pkgID);
             auto mp = new MetaPayload();
             () @trusted {
-                mp.addRecord(RecordType.String, RecordTag.Name, ent.name);
-                mp.addRecord(RecordType.String, RecordTag.Version, ent.versionIdentifier);
-                mp.addRecord(RecordType.Uint64, RecordTag.Release, ent.sourceRelease);
-                mp.addRecord(RecordType.Uint64, RecordTag.BuildRelease, ent.buildRelease);
                 mp.addRecord(RecordType.String, RecordTag.Architecture, ent.architecture);
-                mp.addRecord(RecordType.String, RecordTag.Summary, ent.summary);
                 mp.addRecord(RecordType.String, RecordTag.Description, ent.description);
-                mp.addRecord(RecordType.String, RecordTag.SourceID, ent.sourceID);
                 mp.addRecord(RecordType.String, RecordTag.Homepage, ent.homepage);
+                mp.addRecord(RecordType.String, RecordTag.Name, ent.name);
+                mp.addRecord(RecordType.String, RecordTag.SourceID, ent.sourceID);
+                mp.addRecord(RecordType.String, RecordTag.Summary, ent.summary);
+                mp.addRecord(RecordType.String, RecordTag.Version, ent.versionIdentifier);
+                mp.addRecord(RecordType.Uint64, RecordTag.BuildRelease, ent.buildRelease);
+                mp.addRecord(RecordType.Uint64, RecordTag.Release, ent.sourceRelease);
                 foreach (lic; ent.licenses)
                 {
                     mp.addRecord(RecordType.String, RecordTag.License, lic);
