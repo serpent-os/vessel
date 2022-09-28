@@ -26,6 +26,7 @@ import std.file : mkdirRecurse, rename;
 import std.path : baseName, buildPath, dirName;
 import std.stdio : File;
 import vessel.collectiondb;
+import vessel.indexer;
 import vibe.d;
 import vessel.models;
 
@@ -196,6 +197,9 @@ private:
                 }
             });
         }
+
+        auto idx = new Indexer("stone.index");
+        idx.index(collectionDB, db);
     }
 
     void onProgress(uint workerIndex, Fetchable f, double, double) @trusted
@@ -250,8 +254,6 @@ private:
         /* Flesh out with index metadata */
         MetaPayload mp = () @trusted {
             MetaPayload m = rdr.payload!MetaPayload;
-            m.addRecord(RecordType.String, RecordTag.PackageHash, fetched.checksum);
-            m.addRecord(RecordType.Uint64, RecordTag.PackageSize, fi.size());
             foreach (entry; m)
             {
                 switch (entry.tag)
@@ -272,6 +274,9 @@ private:
                     break;
                 }
             }
+            m.addRecord(RecordType.String, RecordTag.PackageHash,
+                    cast(string) fetched.checksum.dup);
+            m.addRecord(RecordType.Uint64, RecordTag.PackageSize, fi.size());
             return m;
         }();
 

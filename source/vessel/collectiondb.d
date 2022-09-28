@@ -23,6 +23,7 @@ import moss.db.keyvalue.orm;
 import vibe.d;
 import vessel.models;
 import std.path : buildPath;
+import std.array : array;
 
 /**
  * Known state for failure handling
@@ -124,6 +125,23 @@ public final class CollectionDB
         }
         db.close();
         db = null;
+    }
+
+    /**
+     * Return all volatile records (unsorted)
+     *
+     * Returns: All volatile entries
+     */
+    auto volatileRecords() @safe
+    {
+        VolatileRecord[] records;
+
+        db.view((in tx) @trusted {
+            records = tx.list!VolatileRecord.array;
+            return NoDatabaseError;
+        });
+
+        return records;
     }
 
 private:
