@@ -23,6 +23,8 @@ import moss.format.binary.payload;
 import moss.format.binary.payload.meta;
 import moss.format.binary.writer;
 import std.algorithm : multiSort;
+import std.path : dirName, relativePath, buildPath;
+import std.file : exists, mkdirRecurse;
 
 /**
  * The Indexer is responsible for collating entries from the
@@ -38,8 +40,9 @@ public final class Indexer
      * Params:
      *      outputFilename = Where to write the index file
      */
-    this(string outputFilename) @safe
+    this(string rootDir, string outputFilename) @safe
     {
+        this.rootDir = rootDir;
         this.outputFilename = outputFilename;
     }
 
@@ -53,6 +56,12 @@ public final class Indexer
      */
     void index(scope CollectionDB collectionDB, scope MetaDB metaDB) @safe
     {
+        immutable outputDirectory = outputFilename.dirName;
+        if (!outputDirectory.exists)
+        {
+            outputDirectory.mkdirRecurse();
+        }
+
         auto records = collectionDB.volatileRecords();
         records.multiSort!((a, b) => a.sourceID < b.sourceID, (a, b) => a.name < b.name);
         auto fi = File(outputFilename, "wb");
@@ -85,7 +94,10 @@ public final class Indexer
                 {
                     mp.addRecord(RecordType.Provider, RecordTag.Provides, prov);
                 }
-                mp.addRecord(RecordType.String, RecordTag.PackageURI, ent.uri);
+                /* Need a relative path due to branch work */
+                immutable fullPath = rootDir.buildPath(ent.uri);
+                mp.addRecord(RecordType.String, RecordTag.PackageURI,
+                        fullPath.relativePath(outputDirectory));
                 mp.addRecord(RecordType.String, RecordTag.PackageHash, ent.hash);
                 mp.addRecord(RecordType.Uint64, RecordTag.PackageSize, ent.downloadSize);
             }();
@@ -97,4 +109,5 @@ public final class Indexer
 private:
 
     string outputFilename;
+    string rootDir;
 }
