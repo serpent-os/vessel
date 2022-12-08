@@ -105,6 +105,8 @@ import moss.format.binary.payload.meta : MetaPayload, RecordTag, RecordType;
      */
     string[] licenses;
 
+    Dependency[] buildDependencies;
+
     /**
      * All dependencies
      */
@@ -129,6 +131,10 @@ import moss.format.binary.payload.meta : MetaPayload, RecordTag, RecordType;
      * How big is this package in the repo..?
      */
     uint64_t downloadSize;
+
+    string sourcePath;
+    string sourceURI;
+    string sourceRef;
 }
 
 /**
@@ -189,6 +195,29 @@ public final class MetaDB
     }
 
     /**
+     * Remove all entries
+     */
+    MetaResult removeAll() @safe
+    {
+        immutable wipe = db.update((scope tx) @safe {
+            auto e1 = tx.removeAll!MetaEntry;
+            if (!e1.isNull)
+            {
+                return e1;
+            }
+            return tx.removeAll!ProviderMap;
+        });
+
+        if (!wipe.isNull)
+        {
+            return cast(MetaResult) fail(wipe.message);
+        }
+
+        immutable rebuild = db.update((scope tx) => tx.createModel!(MetaEntry, ProviderMap));
+        return rebuild.isNull ? cast(MetaResult) Success() : cast(MetaResult) fail(rebuild.message);
+    }
+
+    /**
      * Connect to the underlying storage
      *
      * Returns: Success or Failure
@@ -243,23 +272,7 @@ public final class MetaDB
             reader.close();
         }
 
-        immutable wipe = db.update((scope tx) @safe {
-            auto e1 = tx.removeAll!MetaEntry;
-            if (!e1.isNull)
-            {
-                return e1;
-            }
-            return tx.removeAll!ProviderMap;
-        });
-        if (!wipe.isNull)
-        {
-            return cast(MetaResult) fail(wipe.message);
-        }
-        immutable rebuild = db.update((scope tx) => tx.createModel!(MetaEntry, ProviderMap));
-        if (!rebuild.isNull)
-        {
-            return cast(MetaResult) fail(rebuild.message);
-        }
+        removeAll();
 
         DatabaseResult updater(scope Transaction tx) @trusted
         {
@@ -406,14 +419,17 @@ private:
             case RecordTag.Version:
                 entry.versionIdentifier = pair.get!string;
                 break;
-                /* Currently we do not store source information */
             case RecordTag.BuildDepends:
+                entry.buildDependencies ~= pair.get!Dependency;
                 break;
             case RecordTag.SourceURI:
+                entry.sourceURI = pair.get!string;
                 break;
             case RecordTag.SourcePath:
+                entry.sourcePath = pair.get!string;
                 break;
             case RecordTag.SourceRef:
+                entry.sourceRef = pair.get!string;
                 break;
             }
         }
