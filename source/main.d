@@ -15,8 +15,11 @@
 
 module main;
 
-import vibe.d;
+import libsodium;
+import moss.service.context;
+import std.path : absolutePath, asNormalizedPath;
 import vessel.app;
+import vibe.d;
 
 /**
  * Main entry point for vessel
@@ -27,7 +30,15 @@ import vessel.app;
  */
 int main(string[] args)
 {
-    auto app = new VesselApplication("state");
+    logInfo("Initialising libsodium");
+    immutable sret = () @trusted { return sodium_init(); }();
+    enforce(sret == 0, "Failed to initialise libsodium");
+
+    immutable rootDir = ".".absolutePath.asNormalizedPath.to!string;
+    setLogLevel(LogLevel.trace);
+
+    auto context = new ServiceContext(rootDir);
+    auto app = new VesselApplication(context);
     scope (exit)
     {
         app.stop();
