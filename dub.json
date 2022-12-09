@@ -19,6 +19,9 @@
 		},
 		"moss-db": {
 			"path": "../moss-db"
+		},
+		"moss-service": {
+			"path": "../moss-service"
 		}
 	},
 	"versions": [
