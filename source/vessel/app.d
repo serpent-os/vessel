@@ -43,24 +43,10 @@ public final class VesselApplication
          * Set up listener config
          */
         this.context = context;
-        settings = new HTTPServerSettings();
-        settings.bindAddresses = ["localhost",];
-        settings.port = 5050;
-        settings.disableDistHost = true;
-        settings.serverString = "Vessel / 0.0.0";
-        settings.useCompressionIfPossible = true;
-
         /* Primary routing mechanism for our API */
-        router = new URLRouter();
-
+        _router = new URLRouter();
         queue = createChannel!(VesselEvent, 500);
-    }
 
-    /**
-     * Start the server
-     */
-    void start() @safe
-    {
         immutable requiredDirs = [
             "public/pool", "public/releases", "public/branches", "staging",
         ];
@@ -78,28 +64,27 @@ public final class VesselApplication
             c.serve();
         }, queue, context.statePath);
 
-        router.registerRestInterface(new VesselAPI(queue));
-        router.registerWebInterface(new VesselWeb(context));
-        router.rebuild();
-
-        listener = listenHTTP(settings, router);
+        _router.registerRestInterface(new VesselAPI(queue));
+        _router.registerWebInterface(new VesselWeb(context));
+        _router.rebuild();
     }
 
     /**
-     * Stop a previously started server
+     * Returns: Router property
      */
-    void stop() @safe
+    @noRoute pragma(inline, true) pure @property URLRouter router() @safe @nogc nothrow
     {
-        listener.stopListening();
-        queue.close();
-        context.close();
+        return _router;
+    }
+
+    @noRoute void close() @safe
+    {
+        logWarn("VesselApp.close(): Not yet implemented");
     }
 
 private:
 
     ServiceContext context;
-    HTTPServerSettings settings;
-    HTTPListener listener;
-    URLRouter router;
+    URLRouter _router;
     VesselEventQueue queue;
 }

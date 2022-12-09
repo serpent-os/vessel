@@ -18,7 +18,8 @@ module main;
 import libsodium;
 import moss.service.context;
 import std.path : absolutePath, asNormalizedPath;
-import vessel.app;
+import vessel.server;
+import vessel.models;
 import vibe.d;
 
 /**
@@ -38,11 +39,15 @@ int main(string[] args)
     setLogLevel(LogLevel.trace);
 
     auto context = new ServiceContext(rootDir);
-    auto app = new VesselApplication(context);
+
+    /* Configure the model */
+    immutable dbErr = context.appDB.update((scope tx) => tx.createModel!(Settings));
+    enforceHTTP(dbErr.isNull, HTTPStatus.internalServerError, dbErr.message);
+
+    auto server = new VesselServer(context);
     scope (exit)
     {
-        app.stop();
+        server.close();
     }
-    app.start();
     return runApplication();
 }

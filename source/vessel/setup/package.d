@@ -16,6 +16,7 @@
 module vessel.setup;
 
 import vibe.d;
+import vibe.core.channel;
 import moss.service.context;
 
 /**
@@ -28,9 +29,12 @@ import moss.service.context;
     /**
      * Construct new VesselWeb
      */
-    this(ServiceContext context) @safe
+    this(ServiceContext context, Channel!(bool, 1) doneWork) @safe
     {
         this.context = context;
+        this.doneWork = doneWork;
+        _router = new URLRouter();
+        _router.registerWebInterface(this);
     }
 
     /**
@@ -51,7 +55,17 @@ import moss.service.context;
         render!"setup/index.dt";
     }
 
+    /**
+     * Returns: router property
+     */
+    @noRoute pragma(inline, true) pure @property URLRouter router() @safe @nogc nothrow
+    {
+        return _router;
+    }
+
 private:
 
     ServiceContext context;
+    URLRouter _router;
+    Channel!(bool, 1) doneWork;
 }
