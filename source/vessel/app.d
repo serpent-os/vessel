@@ -15,19 +15,16 @@
 
 module vessel.app;
 
-import moss.db.keyvalue;
-import moss.db.keyvalue.errors;
-import moss.db.keyvalue.interfaces;
-import moss.db.keyvalue.orm;
-import vibe.d;
+import moss.service.context;
+import std.algorithm : filter, map;
+import std.conv : to;
+import std.file : exists, mkdirRecurse;
+import std.path : buildPath;
+import std.string : format;
 import vessel.messaging;
 import vessel.rest;
 import vessel.serviceworker;
-import std.algorithm : map, filter;
-import std.path : asNormalizedPath, buildPath, absolutePath;
-import std.file : exists, mkdirRecurse;
-import std.conv : to;
-import std.string : format;
+import vibe.d;
 
 /**
  * Main lifecycle management for the Vessel Daemon
@@ -39,12 +36,12 @@ public final class VesselApplication
     /**
      * Construct a new VesselApplication
      */
-    this(string rootDir) @safe
+    this(ServiceContext context) @safe
     {
         /**
          * Set up listener config
          */
-        this.rootDir = rootDir.absolutePath.asNormalizedPath.to!string;
+        this.context = context;
         settings = new HTTPServerSettings();
         settings.bindAddresses = ["localhost",];
         settings.port = 5050;
@@ -64,10 +61,9 @@ public final class VesselApplication
     void start() @safe
     {
         immutable requiredDirs = [
-            "public/pool", "public/releases", "public/branches", "database",
-            "staging",
+            "public/pool", "public/releases", "public/branches", "staging",
         ];
-        auto builderDirs = requiredDirs.map!((i) => rootDir.buildPath(i))
+        auto builderDirs = requiredDirs.map!((i) => context.statePath.buildPath(i))
             .filter!((i) => !i.exists);
         foreach (req; builderDirs)
         {
@@ -79,7 +75,7 @@ public final class VesselApplication
         runWorkerTask((VesselEventQueue queue, string rootDir) {
             auto c = new ServiceWorker(queue, rootDir);
             c.serve();
-        }, queue, rootDir);
+        }, queue, context.statePath);
 
         router.registerRestInterface(new VesselAPI(queue));
         router.rebuild();
@@ -94,13 +90,14 @@ public final class VesselApplication
     {
         listener.stopListening();
         queue.close();
+        context.close();
     }
 
 private:
 
+    ServiceContext context;
     HTTPServerSettings settings;
     HTTPListener listener;
     URLRouter router;
-    string rootDir = ".";
     VesselEventQueue queue;
 }

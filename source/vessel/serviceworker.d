@@ -70,7 +70,7 @@ public final class ServiceWorker
     {
         logInfo("ServiceWorker now servicing requests");
 
-        db = new MetaDB(rootDir.buildPath("database", "meta"), true);
+        db = new MetaDB(rootDir.buildPath("db", "meta"), true);
         db.connect.match!((Success _) {}, (Failure f) {
             throw new Exception(f.message);
         });

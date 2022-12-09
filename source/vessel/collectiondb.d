@@ -62,7 +62,7 @@ public final class CollectionDB
      */
     CollectionResult connect() @safe
     {
-        immutable dbPath = rootDir.buildPath("database", "collection");
+        immutable dbPath = rootDir.buildPath("db", "collection");
         immutable driverString = format!"lmdb://%s"(dbPath);
         logTrace(format!"CollectionDB: %s"(dbPath));
         immutable flags = DatabaseFlags.CreateIfNotExists;
