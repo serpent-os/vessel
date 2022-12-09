@@ -14,4 +14,4 @@ vessel-test-*
 *.obj
 *.lst
 dub.selections.json
-vsl
+state/
