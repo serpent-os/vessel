@@ -1,0 +1,7 @@
+extends root
+
+block title
+    title Vessel
+        
+block content
+    div.container

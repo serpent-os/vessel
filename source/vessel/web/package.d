@@ -38,7 +38,7 @@ import moss.service.context;
      */
     void index()
     {
-        throw new HTTPStatusException(HTTPStatus.notImplemented);
+        render!"index.dt";
     }
 
 private:
