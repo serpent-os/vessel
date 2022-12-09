@@ -23,6 +23,7 @@ import std.path : buildPath;
 import std.string : format;
 import vessel.messaging;
 import vessel.rest;
+import vessel.web;
 import vessel.serviceworker;
 import vibe.d;
 
@@ -78,6 +79,7 @@ public final class VesselApplication
         }, queue, context.statePath);
 
         router.registerRestInterface(new VesselAPI(queue));
+        router.registerWebInterface(new VesselWeb(context));
         router.rebuild();
 
         listener = listenHTTP(settings, router);
