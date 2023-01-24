@@ -15,25 +15,20 @@
 
 module vessel.setup;
 
-import moss.service.context;
+import moss.service.server;
 import vessel.models;
-import vibe.core.channel;
 import vibe.d;
+import moss.service.context;
 
 /**
  * Main web frontend for Vessel
  */
-@path("/") public final class VesselSetup
+@path("/") public final class VesselSetup : Application
 {
-    @disable this();
 
-    /**
-     * Construct new VesselWeb
-     */
-    this(ServiceContext context, Channel!(bool, 1) doneWork) @safe
+    @noRoute override void initialize(ServiceContext context) @safe
     {
         this.context = context;
-        this.notifier = doneWork;
         _router = new URLRouter();
         _router.registerWebInterface(this);
     }
@@ -97,21 +92,24 @@ import vibe.d;
         enforceHTTP(err.isNull, HTTPStatus.internalServerError, err.message);
 
         /* Done! */
-        notifier.put(true);
+        completed.emit();
         redirect("/");
     }
 
     /**
      * Returns: router property
      */
-    @noRoute pragma(inline, true) pure @property URLRouter router() @safe @nogc nothrow
+    @noRoute override pure @property URLRouter router() @safe @nogc nothrow
     {
         return _router;
+    }
+
+    @noRoute override void close() @safe
+    {
     }
 
 private:
 
     ServiceContext context;
     URLRouter _router;
-    Channel!(bool, 1) notifier;
 }

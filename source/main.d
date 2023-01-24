@@ -16,10 +16,11 @@
 module main;
 
 import libsodium;
-import moss.service.context;
+import moss.service.server;
 import std.path : absolutePath, asNormalizedPath;
-import vessel.server;
+import vessel.app;
 import vessel.models;
+import vessel.setup;
 import vibe.d;
 
 /**
@@ -38,16 +39,22 @@ int main(string[] args)
     immutable rootDir = ".".absolutePath.asNormalizedPath.to!string;
     setLogLevel(LogLevel.trace);
 
-    auto context = new ServiceContext(rootDir);
-
-    /* Configure the model */
-    immutable dbErr = context.appDB.update((scope tx) => tx.createModel!(Settings));
-    enforceHTTP(dbErr.isNull, HTTPStatus.internalServerError, dbErr.message);
-
-    auto server = new VesselServer(context);
+    auto server = new Server!(VesselSetup, VesselApplication)(rootDir);
     scope (exit)
     {
         server.close();
     }
+    server.serverSettings.port = 5050;
+    server.serverSettings.serverString = "avalance/0.1";
+    server.serverSettings.sessionIdCookie = "avalanche.session_id";
+
+    /* Configure the model */
+    immutable dbErr = server.context.appDB.update((scope tx) => tx.createModel!(Settings));
+    enforceHTTP(dbErr.isNull, HTTPStatus.internalServerError, dbErr.message);
+
+    const settings = server.context.appDB.getSettings.tryMatch!((Settings s) => s);
+    server.mode = settings.setupComplete ? ApplicationMode.Main : ApplicationMode.Setup;
+    server.start();
+
     return runApplication();
 }

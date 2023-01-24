@@ -16,6 +16,7 @@
 module vessel.app;
 
 import moss.service.context;
+import moss.service.server;
 import std.algorithm : filter, map;
 import std.conv : to;
 import std.file : exists, mkdirRecurse;
@@ -23,21 +24,17 @@ import std.path : buildPath;
 import std.string : format;
 import vessel.messaging;
 import vessel.rest;
-import vessel.web;
 import vessel.serviceworker;
+import vessel.web;
 import vibe.d;
 
 /**
  * Main lifecycle management for the Vessel Daemon
  */
-public final class VesselApplication
+public final class VesselApplication : Application
 {
-    @disable this();
 
-    /**
-     * Construct a new VesselApplication
-     */
-    this(ServiceContext context) @safe
+    @noRoute override void initialize(ServiceContext context) @safe
     {
         /**
          * Set up listener config
@@ -72,14 +69,13 @@ public final class VesselApplication
     /**
      * Returns: Router property
      */
-    @noRoute pragma(inline, true) pure @property URLRouter router() @safe @nogc nothrow
+    @noRoute override pure @property URLRouter router() @safe @nogc nothrow
     {
         return _router;
     }
 
-    @noRoute void close() @safe
+    @noRoute override void close() @safe
     {
-        logWarn("VesselApp.close(): Not yet implemented");
     }
 
 private:
