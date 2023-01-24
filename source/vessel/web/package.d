@@ -17,6 +17,7 @@ module vessel.web;
 
 import vibe.d;
 import moss.service.context;
+import vessel.web.accounts;
 
 /**
  * Main web frontend for Vessel
@@ -28,9 +29,10 @@ import moss.service.context;
     /**
      * Construct new VesselWeb
      */
-    this(ServiceContext context) @safe
+    this(ServiceContext context, URLRouter router) @safe
     {
         this.context = context;
+        router.registerWebInterface(cast(AccountsWeb) new VesselAccountsWeb(context));
     }
 
     /**
