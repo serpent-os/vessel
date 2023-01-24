@@ -45,8 +45,8 @@ int main(string[] args)
         server.close();
     }
     server.serverSettings.port = 5050;
-    server.serverSettings.serverString = "avalance/0.1";
-    server.serverSettings.sessionIdCookie = "avalanche.session_id";
+    server.serverSettings.serverString = "vessel/0.1";
+    server.serverSettings.sessionIdCookie = "vessel.session_id";
 
     /* Configure the model */
     immutable dbErr = server.context.appDB.update((scope tx) => tx.createModel!(Settings));
