@@ -24,6 +24,7 @@ import std.path : buildPath;
 import std.string : format;
 import vessel.messaging;
 import vessel.rest;
+import vessel.rest.pairing;
 import vessel.serviceworker;
 import vessel.web;
 import vibe.d;
@@ -62,6 +63,7 @@ public final class VesselApplication : Application
         }, queue, context.statePath);
 
         _router.registerRestInterface(new VesselAPI(queue));
+        _router.registerRestInterface(new VesselPairingService(context));
         _router.registerWebInterface(new VesselWeb(context, _router));
     }
 
