@@ -32,7 +32,7 @@ import vessel.models.settings;
     /**
      * Construct new VesselWeb
      */
-    this(ServiceContext context, URLRouter router) @safe
+    @noRoute this(ServiceContext context, URLRouter router) @safe
     {
         this.context = context;
         router.registerWebInterface(cast(AccountsWeb) new VesselAccountsWeb(context));
