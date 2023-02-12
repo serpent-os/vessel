@@ -2,7 +2,7 @@ div.card
     div.card-body
         h5.card-title Pairing information
 
-        div.datagrid.p-3
+        div.datagrid
             div.datagrid-item
                 div.datagrid-title Connection host
                 div.datagrid-content=settings.instanceURI
