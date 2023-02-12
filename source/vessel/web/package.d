@@ -43,8 +43,8 @@ import vessel.models.settings;
      */
     void index()
     {
-        auto publicKey = context.tokenManager.publicKey;
-        auto settings = context.appDB.getSettings().tryMatch!((Settings s) => s);
+        const publicKey = context.tokenManager.publicKey;
+        const settings = context.appDB.getSettings().tryMatch!((Settings s) => s);
         SummitEndpoint[] endpoints;
         context.appDB.view((in tx) @safe {
             auto ls = tx.list!SummitEndpoint;
