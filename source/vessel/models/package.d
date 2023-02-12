@@ -15,7 +15,6 @@
 
 module vessel.models;
 
-public import vessel.models.branch;
 public import vessel.models.release;
 public import vessel.models.record;
 public import vessel.models.settings;
