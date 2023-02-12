@@ -1,0 +1,19 @@
+- import moss.service.models : EndpointStatus;
+- final switch (endpoint.status)
+- {
+    - case EndpointStatus.AwaitingAcceptance:
+    - case EndpointStatus.AwaitingEnrolment:
+        span.status-dot.status-dot-animated.bg-orange
+        - break;
+    - case EndpointStatus.Operational:
+        span.status-dot.status-dot-animated.bg-green
+        - break;
+    - case EndpointStatus.Failed:
+        span.status-dot.status-dot-animated.bg-red
+        - break;
+    - case EndpointStatus.Forbidden:
+        span.status-dot
+        - break;
+    - case EndpointStatus.Unreachable:
+        span.status-dot.status-dot-animated.bg-yellow
+- }

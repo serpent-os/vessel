@@ -1,0 +1,17 @@
+// Enumerate all the paired endpoints
+
+- foreach (endpoint; endpoints)
+- {
+    div.list-group-item
+        - auto firstLetter = endpoint.id[0];
+        div.row.align-items-center
+            div.col-auto
+                include widgets/ep_indicator
+            div.col-auto
+                // muscle memory
+                span.avatar=firstLetter
+            div.col.text-truncate
+                a.text-reset.d-block=endpoint.hostAddress
+                div.d-block.text-muted=endpoint.statusText
+            include widgets/ep_action
+- }

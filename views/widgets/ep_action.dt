@@ -1,0 +1,13 @@
+div.col-auto
+    - import moss.service.models : EndpointStatus;
+    - switch (endpoint.status)
+    - {
+        - case EndpointStatus.AwaitingAcceptance:
+            div
+                a.btn.btn-square.mx-1.btn-outline-primary(href="#") Accept
+                a.btn.btn-square.mx-1.btn-outline-danger(href="#") Reject
+            - break;
+        - default:
+            a.btn.btn-square.btn-outline-danger(href="#") Remove
+            - break;
+    - }

@@ -7,17 +7,17 @@ block title
 block content
 
     div.container
-        div.card
-            div.list-group.list-group-flush
-                - import std.range : empty;
-                - if (endpoints.empty)
-                - {
-                    include empty
-                    include pairing_info
-                - } else {
-                    - foreach (endpoint; endpoints)
-                    - {
-                        div.list-group-item
-                            strong=endpoint.id
-                    - }
-                - }
+        div.row
+            div.col-sm-12.col-12.col-md-8
+                div.card
+                    div.list-group.list-group-flush
+                        - import std.range : empty;
+                        - if (endpoints.empty)
+                        - {
+                            include widgets/empty
+                        - } else {
+                            div.list-group-header Endpoint connections
+                            include widgets/paired_items
+                        - }
+            div.col-sm-12.col-12.col-md-4
+                include widgets/pairing_info
