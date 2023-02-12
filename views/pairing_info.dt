@@ -1,0 +1,8 @@
+h5.card-title.p-3 To connect with this instance you'll need the following information
+div.datagrid.p-3
+    div.datagrid-item
+        div.datagrid-title Connection host
+        div.datagrid-content=settings.instanceURI
+    div.datagrid-item
+        div.datagrid-title Public key
+        div.datagrid-content: code=publicKey

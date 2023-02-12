@@ -20,6 +20,7 @@ import std.array : array;
 import moss.service.context;
 import vessel.web.accounts;
 import moss.service.models.endpoints;
+import vessel.models.settings;
 
 /**
  * Main web frontend for Vessel
@@ -42,13 +43,15 @@ import moss.service.models.endpoints;
      */
     void index()
     {
+        auto publicKey = context.tokenManager.publicKey;
+        auto settings = context.appDB.getSettings().tryMatch!((Settings s) => s);
         SummitEndpoint[] endpoints;
         context.appDB.view((in tx) @safe {
             auto ls = tx.list!SummitEndpoint;
             endpoints = () @trusted { return ls.array(); }();
             return NoDatabaseError;
         });
-        render!("index.dt", endpoints);
+        render!("index.dt", endpoints, settings, publicKey);
     }
 
 private:

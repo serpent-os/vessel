@@ -2,12 +2,22 @@ extends base
 
 block title
     title Vessel
-        
+
+
 block content
+
     div.container
-        div.list-group.list-group-flush
-            - foreach (endpoint; endpoints)
-            - {
-                div.list-group-item
-                    strong=endpoint.id
-            - }
+        div.card
+            div.list-group.list-group-flush
+                - import std.range : empty;
+                - if (endpoints.empty)
+                - {
+                    include empty
+                    include pairing_info
+                - } else {
+                    - foreach (endpoint; endpoints)
+                    - {
+                        div.list-group-item
+                            strong=endpoint.id
+                    - }
+                - }

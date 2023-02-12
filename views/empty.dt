@@ -1,0 +1,4 @@
+div.empty
+    div.empty-icon: svg.logo.text-muted: use(xlink:href="/static/tabler/tabler-sprite.svg#tabler-mood-suprised")
+    p.empty-title No endpoints found
+    p.empty-subtitle.text-muted We're still awaiting connection from a Summit endpoint.
