@@ -62,7 +62,7 @@ public final class VesselApplication : Application
             c.serve();
         }, queue, context.statePath);
 
-        _router.registerRestInterface(new VesselAPI(queue));
+        _router.registerRestInterface(new VesselService(context, queue));
         _router.registerRestInterface(new VesselPairingService(context));
         _router.registerWebInterface(new VesselWeb(context, _router));
     }

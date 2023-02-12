@@ -15,75 +15,32 @@
 
 module vessel.rest;
 
-import vibe.d;
+import moss.service.context;
+import moss.service.interfaces.vessel;
+import std.exception : assumeUnique;
 import std.stdint : uint64_t;
 import vessel.messaging;
-import std.exception : assumeUnique;
-
-/**
- * We only care for packages right now.
- */
-public enum CollectableType : string
-{
-    Log = "log",
-    Manifest = "manifest",
-    Package = "package",
-}
-
-/**
- * A Collectable is essentially just a .stone with a hash
- */
-public struct Collectable
-{
-    /**
-     * Type of collectable
-     */
-    CollectableType type;
-
-    /**
-     * Where can we download this from?
-     */
-    string uri;
-
-    /**
-     * Similarly, what is the hash?
-     */
-    string sha256sum;
-}
-
-/**
- * Contract for our API
- */
-@path("/api/v1")
-public interface VesselAPIv1
-{
-    /**
-     * Request an import of binaries into the volatile branch
-     *
-     * Params:
-     *      reportID     = ID to use when reporting back on status
-     *      collectables = The stones to collect
-     */
-    @method(HTTPMethod.POST) @path("collections/import") void importBinaries(
-            uint64_t reportID, Collectable[] collectables) @safe;
-}
+import vibe.d;
 
 /**
  * Concrete implementation of the interface
  */
-public final class VesselAPI : VesselAPIv1
+public final class VesselService : VesselAPI
 {
     @disable this();
+
+    mixin AppAuthenticatorContext;
 
     /**
      * Construct VesselAPI implementation with knowledge of the worker
      */
-    this(VesselEventQueue queue) @safe
+    this(ServiceContext context, VesselEventQueue queue) @safe
     {
+        this.context = context;
         this.queue = queue;
     }
 
-    override void importBinaries(uint64_t reportID, Collectable[] collectables) @safe
+    override void importBinaries(uint64_t reportID, Collectable[] collectables, NullableToken token) @safe
     {
         string[] uris;
         string[] hashes;
@@ -104,5 +61,6 @@ public final class VesselAPI : VesselAPIv1
 
 private:
 
+    ServiceContext context;
     VesselEventQueue queue;
 }
