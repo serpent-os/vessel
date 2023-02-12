@@ -20,6 +20,7 @@ import moss.service.server;
 import std.path : absolutePath, asNormalizedPath;
 import vessel.app;
 import vessel.models;
+import moss.service.models;
 import vessel.setup;
 import vibe.d;
 
@@ -49,7 +50,8 @@ int main(string[] args)
     server.serverSettings.sessionIdCookie = "vessel.session_id";
 
     /* Configure the model */
-    immutable dbErr = server.context.appDB.update((scope tx) => tx.createModel!(Settings));
+    immutable dbErr = server.context.appDB.update((scope tx) => tx.createModel!(Settings,
+            SummitEndpoint));
     enforceHTTP(dbErr.isNull, HTTPStatus.internalServerError, dbErr.message);
 
     const settings = server.context.appDB.getSettings.tryMatch!((Settings s) => s);

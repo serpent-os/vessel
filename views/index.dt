@@ -5,4 +5,9 @@ block title
         
 block content
     div.container
-        h3 TODO: add pairing info
+        div.list-group.list-group-flush
+            - foreach (endpoint; endpoints)
+            - {
+                div.list-group-item
+                    strong=endpoint.id
+            - }

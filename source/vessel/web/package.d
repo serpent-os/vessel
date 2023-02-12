@@ -16,8 +16,10 @@
 module vessel.web;
 
 import vibe.d;
+import std.array : array;
 import moss.service.context;
 import vessel.web.accounts;
+import moss.service.models.endpoints;
 
 /**
  * Main web frontend for Vessel
@@ -40,7 +42,13 @@ import vessel.web.accounts;
      */
     void index()
     {
-        render!"index.dt";
+        SummitEndpoint[] endpoints;
+        context.appDB.view((in tx) @safe {
+            auto ls = tx.list!SummitEndpoint;
+            endpoints = () @trusted { return ls.array(); }();
+            return NoDatabaseError;
+        });
+        render!("index.dt", endpoints);
     }
 
 private:
