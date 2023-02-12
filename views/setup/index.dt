@@ -13,7 +13,7 @@ block body
                         svg.primaryLogo.logo.text-azure(width="96px", height="96px")
                             use(xlink:href="/static/tabler/tabler-sprite.svg#tabler-trolley")
                     div.text-center.row.p-4: h6.display-6 Welcome to Vessel
-                    div.text-center.row.p-1: p.lead.opacity-75 Vessel is a collection management application, responsible for making new packages available to users via an update mechanism.
+                    div.text-center.row.p-1: p.lead.opacity-75 Vessel is a repository management application, responsible for making new packages available to users via an update mechanism.
                     div.text-center.row.p-1: p.lead We just need to go through some basic details before we can get everything up and running.
 
                     form#setupForm(autocomplete="off", action="/setup/apply", method="POST")

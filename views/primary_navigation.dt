@@ -4,7 +4,7 @@ nav.navbar.navbar-expand-lg.navbar-light
         a.navbar-brand.logo(href="/")
             svg.primaryLogo.logo.text-azure(width="32px", height="32px")
                 use(xlink:href="/static/tabler/tabler-sprite.svg#tabler-trolley")
-            span.logo.px-2 #[span.subtitle.text-muted Vessel] Collections
+            span.logo.px-2 #[span.subtitle.text-muted Vessel] Repositories
         div.d-flex
             a.nav-link.px-4#themeSwitcher(href="#")
                 svg#themeSwitcherIcon(width="16px", height="16px")
