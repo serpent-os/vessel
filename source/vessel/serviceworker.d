@@ -86,7 +86,7 @@ public final class ServiceWorker
             final switch (event.kind)
             {
             case VesselEvent.Kind.importStones:
-                importStones(event.get!(VesselEvent.Kind.importStones));
+                importStones(cast(ImportStonesEvent) event);
                 break;
             }
         }
