@@ -15,13 +15,15 @@
 
 module vessel.web;
 
-import vibe.d;
-import std.array : array;
+import moss.core.errors;
 import moss.service.context;
-import vessel.web.accounts;
-import moss.service.models.endpoints;
-import vessel.models.settings;
+import moss.service.interfaces;
+import moss.service.models;
 import moss.service.pairing;
+import std.array : array;
+import vessel.models.settings;
+import vessel.web.accounts;
+import vibe.d;
 
 /**
  * Main web frontend for Vessel
@@ -54,6 +56,47 @@ import moss.service.pairing;
             return NoDatabaseError;
         });
         render!("index.dt", endpoints, settings, publicKey);
+    }
+
+    /** 
+     * Accept an incoming endpoint request
+     *
+     * Params:
+     *   _id = Endpoint to accept
+     */
+    @path("/vsl/accept/:id") @method(HTTPMethod.GET) void acceptEndpoint(string _id) @safe
+    {
+        SummitEndpoint endpoint;
+        immutable err = context.appDB.view((in tx) => endpoint.load(tx, _id));
+        enforceHTTP(err.isNull, HTTPStatus.notFound, err.message);
+
+        scope (exit)
+        {
+            redirect("/");
+        }
+
+        /* Get the service account */
+        immutable name = format!"%s%s"(serviceAccountPrefix, _id);
+        context.accountManager.registerService(name, endpoint.hostAddress)
+            .match!((Account serviceAccount) {
+                /* Correctly store bearer token now */
+                pairingManager.createBearerToken(endpoint, serviceAccount,
+                    "summit").match!((BearerToken bearerToken) {
+                    /* Acknowledge our acceptance */
+                    pairingManager.acceptFrom(endpoint, bearerToken,
+                    EnrolmentRole.RepositoryManager, EnrolmentRole.Hub).match!((Success s) {
+                        logInfo(format!"Successfully paired with remote endpoint %s"(
+                        endpoint.hostAddress));
+                    }, (Failure f) {
+                        logError(format!"Failed to pair with remote endpoint %s: %s"(endpoint.hostAddress,
+                        f.message));
+                    });
+                }, (Failure f) {
+                    logError(format!"Failed to create bearer token: %s"(f.message));
+                });
+            }, (DatabaseError err) {
+                logError(format!"Failed to lookup service account for %s: %s"(_id, err.message));
+            });
     }
 
 private:

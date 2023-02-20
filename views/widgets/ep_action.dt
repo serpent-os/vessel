@@ -4,10 +4,10 @@ div.col-auto
     - {
         - case EndpointStatus.AwaitingAcceptance:
             div
-                a.btn.btn-square.mx-1.btn-outline-primary(href="#") Accept
-                a.btn.btn-square.mx-1.btn-outline-danger(href="#") Reject
+                a.btn.btn-square.mx-1.btn-outline-primary(href="/vsl/accept/#{endpoint.id}") Accept
+                a.btn.btn-square.mx-1.btn-outline-danger(href="/vsl/reject/#{endpoint.id}") Reject
             - break;
         - default:
-            a.btn.btn-square.btn-outline-danger(href="#") Remove
+            a.btn.btn-square.btn-outline-danger(href="/vsl/remove/#{endpoint.id}") Remove
             - break;
     - }
