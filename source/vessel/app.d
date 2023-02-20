@@ -16,6 +16,7 @@
 module vessel.app;
 
 import moss.service.context;
+import moss.service.pairing;
 import moss.service.server;
 import std.algorithm : filter, map;
 import std.conv : to;
@@ -23,6 +24,7 @@ import std.file : exists, mkdirRecurse;
 import std.path : buildPath;
 import std.string : format;
 import vessel.messaging;
+import vessel.models.settings;
 import vessel.rest;
 import vessel.rest.pairing;
 import vessel.serviceworker;
@@ -41,6 +43,10 @@ public final class VesselApplication : Application
          * Set up listener config
          */
         this.context = context;
+
+        const settings = context.appDB.getSettings.tryMatch!((Settings s) => s);
+        this.pairingManager = new PairingManager(context, "vessel", settings.instanceURI);
+
         /* Primary routing mechanism for our API */
         _router = new URLRouter();
         queue = createChannel!(VesselEvent, 500);
@@ -64,7 +70,7 @@ public final class VesselApplication : Application
 
         _router.registerRestInterface(new VesselService(context, queue));
         _router.registerRestInterface(new VesselPairingService(context));
-        _router.registerWebInterface(new VesselWeb(context, _router));
+        _router.registerWebInterface(new VesselWeb(context, pairingManager, _router));
     }
 
     /**
@@ -84,4 +90,5 @@ private:
     ServiceContext context;
     URLRouter _router;
     VesselEventQueue queue;
+    PairingManager pairingManager;
 }

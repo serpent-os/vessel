@@ -21,6 +21,7 @@ import moss.service.context;
 import vessel.web.accounts;
 import moss.service.models.endpoints;
 import vessel.models.settings;
+import moss.service.pairing;
 
 /**
  * Main web frontend for Vessel
@@ -32,9 +33,10 @@ import vessel.models.settings;
     /**
      * Construct new VesselWeb
      */
-    @noRoute this(ServiceContext context, URLRouter router) @safe
+    @noRoute this(ServiceContext context, PairingManager pairingManager, URLRouter router) @safe
     {
         this.context = context;
+        this.pairingManager = pairingManager;
         router.registerWebInterface(cast(AccountsWeb) new VesselAccountsWeb(context));
     }
 
@@ -57,4 +59,5 @@ import vessel.models.settings;
 private:
 
     ServiceContext context;
+    PairingManager pairingManager;
 }
