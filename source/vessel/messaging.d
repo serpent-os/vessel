@@ -19,6 +19,7 @@ import vibe.d;
 public import vibe.core.channel;
 public import taggedalgebraic.taggedalgebraic;
 public import std.stdint : uint64_t;
+import moss.service.models.endpoints;
 
 /**
  * A set of origins and index-matched hashes
@@ -29,6 +30,11 @@ public struct ImportStonesEvent
      * Remote ID for reporting
      */
     uint64_t reportID;
+
+    /*
+     * Endpoint sending the import event
+     */
+    SummitEndpoint endpoint;
 
     /**
      * Remote URIs for the stones
