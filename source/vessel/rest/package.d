@@ -16,6 +16,7 @@
 module vessel.rest;
 
 import moss.service.context;
+import moss.service.models.endpoints;
 import moss.service.interfaces.vessel;
 import std.exception : assumeUnique;
 import std.stdint : uint64_t;
@@ -42,6 +43,13 @@ public final class VesselService : VesselAPI
 
     override void importBinaries(uint64_t reportID, Collectable[] collectables, NullableToken token) @safe
     {
+        enforceHTTP(!token.isNull, HTTPStatus.forbidden, "Token missing");
+        SummitEndpoint endpoint;
+
+        /* Who rang? */
+        immutable err = context.appDB.view((in tx) => endpoint.load(tx, token.payload.sub));
+        enforceHTTP(err.isNull, HTTPStatus.forbidden, err.message);
+
         string[] uris;
         string[] hashes;
         foreach (col; collectables)
@@ -54,7 +62,7 @@ public final class VesselService : VesselAPI
             uris ~= col.uri;
         }
         VesselEvent event = () @trusted {
-            return ImportStonesEvent(reportID, assumeUnique(uris), assumeUnique(hashes));
+            return ImportStonesEvent(reportID, endpoint, assumeUnique(uris), assumeUnique(hashes));
         }();
         queue.put(event);
     }
