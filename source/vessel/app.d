@@ -69,10 +69,10 @@ public final class VesselApplication : Application
         runTask(&reportWorker);
 
         /* Now startup the service *worker* */
-        runWorkerTask((VesselEventQueue queue, string rootDir) {
-            auto c = new ServiceWorker(queue, rootDir);
+        runWorkerTask((VesselEventQueue queue, ReportEventQueue reportQueue, string rootDir) {
+            auto c = new ServiceWorker(queue, reportQueue, rootDir);
             c.serve();
-        }, queue, context.statePath);
+        }, queue, reportQueue, context.statePath);
 
         _router.registerRestInterface(new VesselService(context, queue));
         _router.registerRestInterface(new VesselPairingService(context));

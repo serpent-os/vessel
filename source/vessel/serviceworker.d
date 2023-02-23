@@ -49,9 +49,10 @@ public final class ServiceWorker
     /**
      * Construct a new ServiceWorker
      */
-    this(VesselEventQueue queue, string rootDir) @safe
+    this(VesselEventQueue queue, ReportEventQueue reportQueue, string rootDir) @safe
     {
         this.queue = queue;
+        this.reportQueue = reportQueue;
         this.rootDir = rootDir;
         this.collectionDB = new CollectionDB(rootDir);
         /* Use all the threads. Crack on my man */
@@ -174,16 +175,19 @@ private:
                 }
             }
             logError(format!"Cannot accept job %d due to failure"(event.reportID));
+            reportQueue.put(cast(ReportEvent) ReportFailureEvent(event.reportID, event.endpoint));
             return;
         }
 
         /* Let's get them all included, shall we? */
         auto jobSet = jobs.values;
+        bool failure;
         foreach (job; jobSet)
         {
             importFetched(job).match!((Success _) {
                 logInfo(format!"Job %d: Successfully imported %s"(event.reportID, job.id));
             }, (Failure f) {
+                failure = true;
                 logError(format!"Job %d: Failed to import %s: %s"(event.reportID,
                     job.id, f.message));
                 try
@@ -202,6 +206,16 @@ private:
                 "volatile", "stone.index");
         auto idx = new Indexer(rootDir, volatileIndexPath);
         idx.index(collectionDB, db);
+
+        /* Let summit know what happened */
+        if (failure)
+        {
+            reportQueue.put(cast(ReportEvent) ReportFailureEvent(event.reportID, event.endpoint));
+        }
+        else
+        {
+            reportQueue.put(cast(ReportEvent) ReportSuccessEvent(event.reportID, event.endpoint));
+        }
     }
 
     void onProgress(uint workerIndex, Fetchable f, double, double) @trusted
@@ -332,6 +346,7 @@ private:
     string stagingDir;
     bool running;
     VesselEventQueue queue;
+    ReportEventQueue reportQueue;
     FetchController fetcher;
     Job[string] jobs;
     MetaDB db;
