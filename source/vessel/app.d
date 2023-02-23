@@ -16,6 +16,9 @@
 module vessel.app;
 
 import moss.service.context;
+import moss.service.interfaces;
+import moss.service.models.endpoints;
+import moss.service.tokens.refresh;
 import moss.service.pairing;
 import moss.service.server;
 import std.algorithm : filter, map;
@@ -62,6 +65,9 @@ public final class VesselApplication : Application
             req.mkdirRecurse();
         }
 
+        reportQueue = createChannel!(ReportEvent, 500);
+        runTask(&reportWorker);
+
         /* Now startup the service *worker* */
         runWorkerTask((VesselEventQueue queue, string rootDir) {
             auto c = new ServiceWorker(queue, rootDir);
@@ -83,12 +89,80 @@ public final class VesselApplication : Application
 
     @noRoute override void close() @safe
     {
+        queue.close();
+        reportQueue.close();
     }
 
 private:
 
+    /** 
+     * To avoid threading issues, only our main thread has access to
+     * the ServiceContext + associated DBs. Therefore the ServiceWorker
+     * sends us a message to report on the completion of an import event,
+     * and we forward that to the SummitEndpoint specified.
+     */
+    void reportWorker() @safe
+    {
+        ReportEvent event;
+        while (reportQueue.tryConsumeOne(event))
+        {
+            final switch (event.kind)
+            {
+            case ReportEvent.Kind.reportSuccess:
+                auto evt = cast(ReportSuccessEvent) event;
+                reportStatus(evt.endpoint, evt.reportID, true);
+                break;
+            case ReportEvent.Kind.reportFailure:
+                auto evt = cast(ReportFailureEvent) event;
+                reportStatus(evt.endpoint, evt.reportID, false);
+                break;
+            }
+        }
+    }
+
+    /** 
+     * Internal helper for remote API
+     *
+     * Params:
+     *   endpoint = Remote endpoint
+     *   reportID = Task ID in build system
+     *   success = Did we get it in?
+     */
+    void reportStatus(SummitEndpoint endpoint, uint64_t reportID, bool success) @safe
+    {
+        if (!ensureEndpointUsable(endpoint, context))
+        {
+            logError(format!"Unable to publish status for %s"(reportID));
+            return;
+        }
+
+        /* Construct token based proxy */
+        auto api = new RestInterfaceClient!SummitAPI(endpoint.hostAddress);
+        api.requestFilter = (req) {
+            req.headers["Authorization"] = format!"Bearer %s"(endpoint.apiToken);
+        };
+
+        /* API call.. */
+        try
+        {
+            if (success)
+            {
+                api.importSucceeded(reportID, NullableToken());
+            }
+            else
+            {
+                api.importFailed(reportID, NullableToken());
+            }
+        }
+        catch (Exception ex)
+        {
+            logError(format!"Failed to report status to %s: %s"(endpoint.hostAddress, ex.message));
+        }
+    }
+
     ServiceContext context;
     URLRouter _router;
+    ReportEventQueue reportQueue;
     VesselEventQueue queue;
     PairingManager pairingManager;
 }
