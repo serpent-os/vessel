@@ -21,6 +21,8 @@ import moss.service.interfaces;
 import moss.service.models;
 import moss.service.pairing;
 import std.array : array;
+import std.file : exists;
+import vessel.messaging;
 import vessel.models.settings;
 import vessel.web.accounts;
 import vibe.d;
@@ -35,9 +37,11 @@ import vibe.d;
     /**
      * Construct new VesselWeb
      */
-    @noRoute this(ServiceContext context, PairingManager pairingManager, URLRouter router) @safe
+    @noRoute this(ServiceContext context, PairingManager pairingManager,
+            VesselEventQueue queue, URLRouter router) @safe
     {
         this.context = context;
+        this.queue = queue;
         this.pairingManager = pairingManager;
         router.registerWebInterface(cast(AccountsWeb) new VesselAccountsWeb(context));
     }
@@ -99,8 +103,20 @@ import vibe.d;
             });
     }
 
+    @path("/vsl/import") @method(HTTPMethod.GET)
+    void importStones(string importPath) @safe
+    {
+        enforceHTTP(importPath.exists, HTTPStatus.notFound,
+                "The specified import directory does not exist");
+
+        VesselEvent event = ImportDirectoryEvent(importPath);
+        queue.put(event);
+        redirect("/");
+    }
+
 private:
 
     ServiceContext context;
     PairingManager pairingManager;
+    VesselEventQueue queue;
 }

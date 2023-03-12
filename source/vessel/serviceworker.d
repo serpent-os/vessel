@@ -89,6 +89,9 @@ public final class ServiceWorker
             case VesselEvent.Kind.importStones:
                 importStones(cast(ImportStonesEvent) event);
                 break;
+            case VesselEvent.Kind.importDirectory:
+                importDirectory(cast(ImportDirectoryEvent) event);
+                break;
             }
         }
         logInfo("ServiceWorker no longer running");
@@ -340,6 +343,17 @@ private:
         return db.install(mp).match!((Success _) {
             return cast(CollectionResult) collectionDB.storeVolatile(record);
         }, (Failure f) { return cast(CollectionResult) f; });
+    }
+
+    /**
+     * Import the given directory
+     *
+     * Params:
+     *      event = Incoming event
+     */
+    void importDirectory(ImportDirectoryEvent event) @safe
+    {
+        logInfo(format!"Request to import directory: %s"(event.directory));
     }
 
     string rootDir = ".";

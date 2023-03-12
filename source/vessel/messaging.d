@@ -80,6 +80,14 @@ public struct ImportStonesEvent
 }
 
 /**
+ * Import a directory (whole) into vessel.
+ */
+public struct ImportDirectoryEvent
+{
+    immutable string directory;
+}
+
+/**
  * Our algebraic event is composed of "events"
  */
 public union VesselEventSet
@@ -88,6 +96,11 @@ public union VesselEventSet
      * Requested to import a bunch of stones
      */
     ImportStonesEvent importStones;
+
+    /**
+     * Requested to import a singular directory
+     */
+    ImportDirectoryEvent importDirectory;
 }
 
 /** 
