@@ -397,10 +397,12 @@ private:
         reindex();
     }
 
+    /**
+     * Handle emission of volatile
+     */
     void reindex() @safe
     {
-        immutable volatileIndexPath = rootDir.buildPath("public", "branches",
-                "volatile", "stone.index");
+        immutable volatileIndexPath = rootDir.buildPath("public", "volatile", "stone.index");
         auto idx = new Indexer(rootDir, volatileIndexPath);
         idx.index(collectionDB, db);
     }

@@ -55,7 +55,7 @@ public final class VesselApplication : Application
         queue = createChannel!(VesselEvent, 500);
 
         immutable requiredDirs = [
-            "public/pool", "public/releases", "public/branches", "staging",
+            "public/pool", "public/volatile", "staging",
         ];
         auto builderDirs = requiredDirs.map!((i) => context.statePath.buildPath(i))
             .filter!((i) => !i.exists);
