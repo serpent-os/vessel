@@ -8,18 +8,6 @@
 	"description": "Repository management for moss clients",
 	"dependencies": {
 		"vibe-d": "~>0.9",
-		"moss-format": {
-			"path": "../moss-format"
-		},
-		"moss-fetcher": {
-			"path": "../moss-fetcher"
-		},
-		"moss-deps": {
-			"path": "../moss-deps"
-		},
-		"moss-db": {
-			"path": "../moss-db"
-		},
 		"moss-service": {
 			"path": "../moss-service"
 		}
