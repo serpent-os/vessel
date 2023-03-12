@@ -1,0 +1,29 @@
+div.card
+    div.card-header
+        // nav tabs
+        ul.nav.nav-tabs.card-header-tabs(data-bs-toggle="actionTabs")
+            li.nav-item
+                a.nav-link.active(href="#action-tab-connections", data-bs-toggle="tab") Connections
+            li.nav-item
+                a.nav-link(href="#action-tab-import", data-bs-toggle="tab") Import stones
+
+    div.card-body
+        div.tab-content
+            // active connections
+            div.tab-pane.active.show#action-tab-connections
+                div.list-group.list-group-flush
+                    - import std.range : empty;
+                    - if (endpoints.empty)
+                    - {
+                        include widgets/empty
+                    - } else {
+                        div.list-group-header Endpoint connections
+                        include widgets/paired_items
+                    - }
+            // import stones
+            div.tab-pane#action-tab-import
+                form.form(action="/vsl/import")
+                    label.form-label.text-muted(for="importPath") Path on the server containing stones
+                    div.row.pb-5
+                        div.col: input.form-control#importPath(name="importPath", type="text", placeholder="Filesystem path")
+                        div.col-auto: button.form-control.btn.btn-primary(type="submit") Begin import

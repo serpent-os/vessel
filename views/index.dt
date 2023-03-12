@@ -9,15 +9,6 @@ block content
     div.container
         div.row
             div.col-sm-12.col-12.col-md-8
-                div.card
-                    div.list-group.list-group-flush
-                        - import std.range : empty;
-                        - if (endpoints.empty)
-                        - {
-                            include widgets/empty
-                        - } else {
-                            div.list-group-header Endpoint connections
-                            include widgets/paired_items
-                        - }
+                include widgets/action_center
             div.col-sm-12.col-12.col-md-4
                 include widgets/pairing_info
