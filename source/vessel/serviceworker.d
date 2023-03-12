@@ -21,8 +21,10 @@ import moss.deps.registry.job;
 import moss.fetcher;
 import moss.format.binary.payload.meta;
 import moss.format.binary.reader;
-import std.algorithm : filter;
-import std.file : mkdirRecurse, rename;
+import std.algorithm : filter, map, sort;
+import std.array : array;
+import std.file : mkdirRecurse, rename, dirEntries, SpanMode;
+import std.range : chunks;
 import std.path : baseName, buildPath, dirName;
 import std.stdio : File;
 import vessel.collectiondb;
@@ -90,7 +92,8 @@ public final class ServiceWorker
                 importStones(cast(ImportStonesEvent) event);
                 break;
             case VesselEvent.Kind.importDirectory:
-                importDirectory(cast(ImportDirectoryEvent) event);
+                /* Multiplex back into fibers */
+                runTask({ importDirectory(cast(ImportDirectoryEvent) event); });
                 break;
             }
         }
@@ -205,10 +208,7 @@ private:
             });
         }
 
-        immutable volatileIndexPath = rootDir.buildPath("public", "branches",
-                "volatile", "stone.index");
-        auto idx = new Indexer(rootDir, volatileIndexPath);
-        idx.index(collectionDB, db);
+        reindex();
 
         /* Let summit know what happened */
         if (failure)
@@ -252,9 +252,10 @@ private:
      *
      * Params:
      *      fetched = The fetched stone
+     *      destructiveMove = Rename vs copy
      * Returns: A MetaResult
      */
-    auto importFetched(scope Job fetched) @safe
+    auto importFetched(scope Job fetched, bool destructiveMove = true) @safe
     {
         auto fi = File(fetched.destinationPath, "rb");
         scope auto rdr = new Reader(fi);
@@ -337,7 +338,16 @@ private:
             return cast(CollectionResult) fail("cannot include build with identical release field");
         }
 
-        fetched.destinationPath.rename(fullPath);
+        if (destructiveMove)
+        {
+            fetched.destinationPath.rename(fullPath);
+        }
+        else
+        {
+            import moss.core.ioutil : IOUtil;
+
+            () @trusted { IOUtil.copyFile(fetched.destinationPath, fullPath); }();
+        }
 
         /* Chain install */
         return db.install(mp).match!((Success _) {
@@ -354,6 +364,45 @@ private:
     void importDirectory(ImportDirectoryEvent event) @safe
     {
         logInfo(format!"Request to import directory: %s"(event.directory));
+
+        auto stones = () @trusted {
+            string path = event.directory;
+            return path.dirEntries("*.stone", SpanMode.depth, false).map!((i) => i.name.idup).array;
+        }();
+
+        /* Every 100 packages, yield to allow work to happen */
+        stones.sort!"a < b";
+        ulong processed = 1;
+        ulong total = stones.length;
+        foreach (chunk; stones.chunks(100))
+        {
+            foreach (item; chunk)
+            {
+                immutable hash = () @trusted { return computeSHA256(item, true); }();
+                scope auto job = new Job(JobType.FetchPackage, item);
+                job.checksum = hash;
+                job.destinationPath = item;
+                job.remoteURI = format!"file://%s"(item);
+                importFetched(job, false).match!((Success _) {
+                    logInfo(format!"bulkImport: [%s/%s] %s"(processed, total, job.destinationPath));
+                }, (Failure f) {
+                    logError(format!"bulkImport: [%s/%s] fail for %s: %s"(processed,
+                        total, job.destinationPath, f.message));
+                });
+                ++processed;
+
+            }
+            vibe.core.core.yield;
+        }
+        reindex();
+    }
+
+    void reindex() @safe
+    {
+        immutable volatileIndexPath = rootDir.buildPath("public", "branches",
+                "volatile", "stone.index");
+        auto idx = new Indexer(rootDir, volatileIndexPath);
+        idx.index(collectionDB, db);
     }
 
     string rootDir = ".";
