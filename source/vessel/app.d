@@ -54,9 +54,7 @@ public final class VesselApplication : Application
         _router = new URLRouter();
         queue = createChannel!(VesselEvent, 500);
 
-        immutable requiredDirs = [
-            "public/pool", "public/volatile", "staging",
-        ];
+        immutable requiredDirs = ["public/pool", "public/volatile", "staging",];
         auto builderDirs = requiredDirs.map!((i) => context.statePath.buildPath(i))
             .filter!((i) => !i.exists);
         foreach (req; builderDirs)

@@ -403,8 +403,12 @@ private:
     void reindex() @safe
     {
         immutable volatileIndexPath = rootDir.buildPath("public", "volatile", "stone.index");
+        logInfo(format!"Indexing %s"(volatileIndexPath));
+        const tsStart = Clock.currTime();
         auto idx = new Indexer(rootDir, volatileIndexPath);
         idx.index(collectionDB, db);
+        const tsEnd = Clock.currTime();
+        logDiagnostic(format!"Finished indexing in %s"(tsEnd - tsStart));
     }
 
     string rootDir = ".";
