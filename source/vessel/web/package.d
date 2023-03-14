@@ -30,9 +30,11 @@ import vibe.d;
 /**
  * Main web frontend for Vessel
  */
-@path("/") public final class VesselWeb
+@requiresAuth @path("/") public final class VesselWeb
 {
     @disable this();
+
+    mixin AppAuthenticatorContext;
 
     /**
      * Construct new VesselWeb
@@ -49,7 +51,7 @@ import vibe.d;
     /**
      * Render the index page
      */
-    void index()
+    @noAuth void index()
     {
         const publicKey = context.tokenManager.publicKey;
         const settings = context.appDB.getSettings().tryMatch!((Settings s) => s);
@@ -68,6 +70,7 @@ import vibe.d;
      * Params:
      *   _id = Endpoint to accept
      */
+    @auth(Role.notExpired & Role.web & Role.accessToken & Role.userAccount & Role.admin)
     @path("/vsl/accept/:id") @method(HTTPMethod.GET) void acceptEndpoint(string _id) @safe
     {
         SummitEndpoint endpoint;
@@ -103,6 +106,7 @@ import vibe.d;
             });
     }
 
+    @auth(Role.notExpired & Role.web & Role.accessToken & Role.userAccount & Role.admin)
     @path("/vsl/import") @method(HTTPMethod.GET)
     void importStones(string importPath) @safe
     {
