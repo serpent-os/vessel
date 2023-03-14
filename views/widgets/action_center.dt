@@ -22,8 +22,13 @@ div.card
                     - }
             // import stones
             div.tab-pane#action-tab-import
-                form.form(action="/vsl/import")
-                    label.form-label.text-muted(for="importPath") Path on the server containing stones
-                    div.row.pb-5
-                        div.col: input.form-control#importPath(name="importPath", type="text", placeholder="Filesystem path")
-                        div.col-auto: button.form-control.btn.btn-primary(type="submit") Begin import
+                - if (req.session && req.session.get!string("accountName", null) !is null)
+                - {
+                    form.form(action="/vsl/import")
+                        label.form-label.text-muted(for="importPath") Path on the server containing stones
+                        div.row.pb-5
+                            div.col: input.form-control#importPath(name="importPath", type="text", placeholder="Filesystem path")
+                            div.col-auto: button.form-control.btn.btn-primary(type="submit") Begin import
+                - } else {
+                    h5 You need to be logged in
+                - }
