@@ -355,7 +355,9 @@ private:
         {
             import moss.core.ioutil : IOUtil;
 
-            () @trusted { IOUtil.copyFile(fetched.destinationPath, fullPath); }();
+            () @trusted {
+                IOUtil.hardlinkOrCopy(fetched.destinationPath, fullPath);
+            }();
         }
 
         /* Chain install */
