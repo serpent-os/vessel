@@ -26,7 +26,7 @@ public import std.stdint : uint64_t;
 public @Model struct VolatileRecord
 {
     /**
-     * Unique identifier for the Branch
+     * The actual package name, only one may occupy this slot.
      */
     @PrimaryKey string name;
 
