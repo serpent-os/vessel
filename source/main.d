@@ -23,6 +23,7 @@ import vessel.models;
 import moss.service.models;
 import vessel.setup;
 import vibe.d;
+import std.getopt;
 
 /**
  * Main entry point for vessel
@@ -33,6 +34,20 @@ import vibe.d;
  */
 int main(string[] args)
 {
+    ushort portNumber = 5050;
+    string[] addresses = ["::", "0.0.0.0"];
+
+    auto opts = () @trusted {
+        return getopt(args, config.bundling, "p|port", "Specific port to serve on",
+                &portNumber, "a|address", "Host address to bind to", &addresses);
+    }();
+
+    if (opts.helpWanted)
+    {
+        defaultGetoptPrinter("vessel:", opts.options);
+        return 1;
+    }
+
     logInfo("Initialising libsodium");
     immutable sret = () @trusted { return sodium_init(); }();
     enforce(sret == 0, "Failed to initialise libsodium");
@@ -45,7 +60,8 @@ int main(string[] args)
     {
         server.close();
     }
-    server.serverSettings.port = 5050;
+    server.serverSettings.bindAddresses = addresses;
+    server.serverSettings.port = portNumber;
     server.serverSettings.serverString = "vessel/0.1";
     server.serverSettings.sessionIdCookie = "vessel.session_id";
 
