@@ -270,6 +270,7 @@ private:
         VolatileRecord record;
         record.pkgID = fetched.checksum;
         string sourceID;
+        string architecture;
 
         /* Flesh out with index metadata */
         MetaPayload mp = () @trusted {
@@ -278,6 +279,9 @@ private:
             {
                 switch (entry.tag)
                 {
+                case RecordTag.Architecture:
+                    architecture = entry.get!string;
+                    break;
                 case RecordTag.Name:
                     record.name = entry.get!string;
                     break;
@@ -304,6 +308,11 @@ private:
         if (sourceID.empty)
         {
             return cast(CollectionResult) fail("missing source name");
+        }
+
+        if (architecture != "x86_64")
+        {
+            return cast(CollectionResult) fail("serpent not yet ported to non-x86_64 targets!");
         }
         record.sourceID = sourceID;
 
@@ -402,7 +411,8 @@ private:
      */
     void reindex() @safe
     {
-        immutable volatileIndexPath = rootDir.buildPath("public", "volatile", "stone.index");
+        immutable volatileIndexPath = rootDir.buildPath("public", "volatile",
+                "x86_64", "stone.index");
         logInfo(format!"Indexing %s"(volatileIndexPath));
         const tsStart = Clock.currTime();
         auto idx = new Indexer(rootDir, volatileIndexPath);
