@@ -46,6 +46,7 @@ public final class VesselApplication : Application
          * Set up listener config
          */
         this.context = context;
+        this.context.accountManager.userRegistrationsAllowed = false;
 
         const settings = context.appDB.getSettings.tryMatch!((Settings s) => s);
         this.pairingManager = new PairingManager(context, "vessel", settings.instanceURI);
