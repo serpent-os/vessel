@@ -53,7 +53,6 @@ int main(string[] args)
     enforce(sret == 0, "Failed to initialise libsodium");
 
     immutable rootDir = ".".absolutePath.asNormalizedPath.to!string;
-    setLogLevel(LogLevel.trace);
 
     auto server = new Server!(VesselSetup, VesselApplication)(rootDir);
     scope (exit)
