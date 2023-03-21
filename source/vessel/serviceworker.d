@@ -18,7 +18,6 @@ import moss.client.metadb;
 import moss.core.errors;
 import moss.core.util : computeSHA256;
 import moss.deps.registry.job;
-import moss.fetcher;
 import moss.format.binary.payload.meta;
 import moss.format.binary.reader;
 import std.algorithm : filter, map, sort;
@@ -57,12 +56,6 @@ public final class ServiceWorker
         this.reportQueue = reportQueue;
         this.rootDir = rootDir;
         this.collectionDB = new CollectionDB(rootDir);
-        /* Use all the threads. Crack on my man */
-        fetcher = new FetchController();
-        fetcher.onProgress.connect(&onProgress);
-        fetcher.onComplete.connect(&onComplete);
-        fetcher.onFail.connect(&onFail);
-
         stagingDir = rootDir.buildPath("staging");
     }
 
@@ -118,26 +111,6 @@ private:
         /* Reset job storage */
         () @trusted { jobs.clear(); }();
 
-        /**
-         * This is called before the *main* completion handler.
-         */
-        void completionHandler(immutable(Fetchable) f, long code) @trusted
-        {
-            /* Let dispatch handle it */
-            if (code != 0 && code != 200)
-            {
-                return;
-            }
-            auto job = jobs[f.sourceURI];
-            immutable expHash = job.checksum;
-            immutable compHash = computeSHA256(job.destinationPath, true);
-            if (expHash != compHash)
-            {
-                onFail(f, format!"%s: Expected hash %s, got %s"(f.sourceURI, expHash, compHash));
-                return;
-            }
-        }
-
         logInfo(format!"Import request for: %s"(event));
         foreach (i; 0 .. event.uris.length)
         {
@@ -154,15 +127,34 @@ private:
 
             /* Remember it. */
             jobs[uri] = job;
-
-            auto f = Fetchable(uri, destPath, 0, FetchType.RegularFile, &completionHandler);
-            fetcher.enqueue(f);
         }
 
-        /* Fetch all the thingies */
-        while (!fetcher.empty)
+        foreach (jobID, ref job; jobs)
         {
-            fetcher.fetch();
+            try
+            {
+                job.destinationPath.dirName.mkdirRecurse();
+                download(job.remoteURI, job.destinationPath);
+
+                immutable expHash = job.checksum;
+                immutable compHash = () @trusted {
+                    return computeSHA256(job.destinationPath, true);
+                }();
+                if (expHash != compHash)
+                {
+                    logError(format!"%s: Expected hash %s, got %s"(job.remoteURI,
+                            expHash, compHash));
+                    job.status = JobStatus.Failed;
+                    continue;
+                }
+
+                job.status = JobStatus.Completed;
+            }
+            catch (Exception ex)
+            {
+                logError(format!"Failed download: %s"(ex.message));
+                job.status = JobStatus.Failed;
+            }
         }
 
         auto failedJobs = jobs.values.filter!((j) => j.status == JobStatus.Failed);
@@ -219,32 +211,6 @@ private:
         {
             reportQueue.put(cast(ReportEvent) ReportSuccessEvent(event.reportID, event.endpoint));
         }
-    }
-
-    void onProgress(uint workerIndex, Fetchable f, double, double) @trusted
-    {
-        jobs[f.sourceURI].status = JobStatus.InProgress;
-    }
-
-    void onComplete(Fetchable f, long code) @trusted
-    {
-        if (code != 200 && code != 0)
-        {
-            onFail(f, format!"Status code: %s"(code));
-            return;
-        }
-        auto job = jobs[f.sourceURI];
-        if (job.status != JobStatus.InProgress)
-        {
-            return;
-        }
-        job.status = JobStatus.Completed;
-    }
-
-    void onFail(Fetchable f, string errMsg) @trusted
-    {
-        jobs[f.sourceURI].status = JobStatus.Failed;
-        logError(errMsg);
     }
 
     /**
@@ -428,7 +394,6 @@ private:
     bool running;
     VesselEventQueue queue;
     ReportEventQueue reportQueue;
-    FetchController fetcher;
     Job[string] jobs;
     MetaDB db;
     CollectionDB collectionDB;
