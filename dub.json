@@ -7,7 +7,7 @@
 	],
 	"description": "Repository management for moss clients",
 	"dependencies": {
-		"vibe-d": "~>0.9",
+		"vibe-d": "==0.9.5",
 		"moss-service": {
 			"path": "../moss-service"
 		}
