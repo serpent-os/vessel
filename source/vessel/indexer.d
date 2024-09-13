@@ -21,7 +21,7 @@ import moss.format.binary.payload;
 import moss.format.binary.payload.meta;
 import moss.format.binary.writer;
 import std.algorithm : multiSort;
-import std.file : exists, mkdirRecurse;
+import std.file : exists, mkdirRecurse, rename;
 import std.path : buildPath, dirName, relativePath;
 import vessel.collectiondb;
 import vibe.d;
@@ -64,7 +64,8 @@ public final class Indexer
 
         auto records = collectionDB.volatileRecords();
         records.multiSort!((a, b) => a.sourceID < b.sourceID, (a, b) => a.name < b.name);
-        auto fi = File(outputFilename, "wb");
+        immutable string tmpIndexFile = outputFilename ~ ".tmp";
+        auto fi = File(tmpIndexFile, "wb");
         auto wr = new Writer(fi);
         wr.fileType = MossFileType.Repository;
         wr.compressionType = PayloadCompression.Zstd;
@@ -104,6 +105,8 @@ public final class Indexer
             wr.addPayload(mp);
         }
         wr.close();
+        /* rename is guaranteed to be atomic */
+        tmpIndexFile.rename(outputFilename);
     }
 
 private:
