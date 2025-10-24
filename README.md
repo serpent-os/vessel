@@ -1,3 +1,7 @@
+**This project is no longer active**
+
+---
+
 # vessel
 
 Repository management for the [Serpent OS](https://serpentos.com) project. Written in [D Lang](https://dlang.org) using the [vibe.d](https://vibed.org) framework.
